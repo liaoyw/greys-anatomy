@@ -41,7 +41,14 @@ public class GreysAnatomyMain {
 		}
 		
 		VirtualMachine vm = VirtualMachine.attach(attachVmd);
-		vm.loadAgent(JARFILE);
+		
+		if( args.length >= 2 ) {
+			vm.loadAgent(JARFILE, args[1]);
+		} else {
+			vm.loadAgent(JARFILE);
+		}
+		
+		
 		vm.detach();
 		
 		AgentClient.init(ConfigUtils.DEFAULT_AGENT_SERVER_PORT, ConfigUtils.DEFAULT_CONNECT_TIMEOUT);

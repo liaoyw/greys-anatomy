@@ -17,11 +17,26 @@ public class AgentMain {
 		main(args, inst);
 	}
 	
+	private static int getPort(String args) {
+		if( null == args
+				|| args.isEmpty()) {
+			return ConfigUtils.DEFAULT_AGENT_SERVER_PORT;
+		}
+		final String[] strs = args.split(",");
+		try {
+			return Integer.valueOf(strs[0]);
+		}catch(Exception e) {
+			return ConfigUtils.DEFAULT_AGENT_SERVER_PORT;
+		}
+	}
+	
 	public static synchronized void main(final String args, final Instrumentation inst) {
 //		AgentServer.init(inst, ConfigUtils.DEFAULT_AGENT_SERVER_PORT);
 		try {
 			URLClassLoader agentLoader = new URLClassLoader(new URL[]{new URL("file:"+GreysAnatomyMain.JARFILE)});
-			agentLoader.loadClass("com.googlecode.greysanatomy.network.AgentServer").getMethod("init",Instrumentation.class, int.class).invoke(null, inst, ConfigUtils.DEFAULT_AGENT_SERVER_PORT);
+			
+			final int port = getPort(args);
+			agentLoader.loadClass("com.googlecode.greysanatomy.network.AgentServer").getMethod("init",Instrumentation.class, int.class).invoke(null, inst, port);
 			
 		}catch(Throwable t) {
 			t.printStackTrace();

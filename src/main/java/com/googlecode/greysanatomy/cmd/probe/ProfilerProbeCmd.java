@@ -20,7 +20,7 @@ public class ProfilerProbeCmd extends ProbeCmd {
 	@CmdArg(name="em", nullable=false)
 	private String enterMethodRegex;
 	
-	@CmdArg(name="c", nullable=false)
+	@CmdArg(name="cl", nullable=false)
 	private long costLimit;
 	
 	@Override

@@ -40,8 +40,6 @@ public class GreysAnatomyMain {
 			throw new IllegalArgumentException("pid not existed.");
 		}
 		
-		VirtualMachine vm = VirtualMachine.attach(attachVmd);
-		
 		final StringBuilder configSB = new StringBuilder();
 		if( args.length >= 2 ) {
 			for( int i=1;i<args.length;i++ ) {
@@ -49,14 +47,21 @@ public class GreysAnatomyMain {
 			}
 		}
 		
-		if( args.length >= 2 ) {
-			vm.loadAgent(JARFILE, configSB.toString());
-		} else {
-			vm.loadAgent(JARFILE);
+		VirtualMachine vm = null;
+		try {
+			vm = VirtualMachine.attach(attachVmd);
+			
+			if( args.length >= 2 ) {
+				vm.loadAgent(JARFILE, configSB.toString());
+			} else {
+				vm.loadAgent(JARFILE);
+			}
+		}finally {
+			if( null != vm ) {
+				vm.detach();
+			}
+			
 		}
-		
-		
-		vm.detach();
 		
 		final int port = ConfigUtils.getPort(configSB.toString());
 		AgentClient.init(port, ConfigUtils.DEFAULT_CONNECT_TIMEOUT);

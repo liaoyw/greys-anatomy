@@ -49,7 +49,7 @@ public class ClassDetailActionCmd extends ActionCmd {
 		}
 		
 		for( Class<?> superClass : superClasses ) {
-			if( clazz.isInstance(superClass) ) {
+			if( superClass.isAssignableFrom(clazz) ) {
 				return true;
 			}
 		}

@@ -10,7 +10,7 @@ import com.googlecode.greysanatomy.cmd.annotation.Cmd;
 import com.googlecode.greysanatomy.cmd.annotation.CmdArg;
 import com.googlecode.greysanatomy.util.RefDetailUtils;
 
-@Cmd(name = "dc")
+@Cmd(name = "detail-class")
 public class ClassDetailActionCmd extends ActionCmd {
 
 	private static final long serialVersionUID = 5352482967201077328L;

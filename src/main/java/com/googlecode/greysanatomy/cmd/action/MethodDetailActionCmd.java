@@ -11,7 +11,7 @@ import com.googlecode.greysanatomy.cmd.annotation.Cmd;
 import com.googlecode.greysanatomy.cmd.annotation.CmdArg;
 import com.googlecode.greysanatomy.util.RefDetailUtils;
 
-@Cmd(name="dm")
+@Cmd(name="detail-method")
 public class MethodDetailActionCmd extends ActionCmd {
 
 	private static final long serialVersionUID = -2356735884270740021L;

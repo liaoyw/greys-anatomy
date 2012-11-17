@@ -9,7 +9,7 @@ import com.googlecode.greysanatomy.probe.ProbeListener;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
 import com.googlecode.greysanatomy.util.ProfilerUtils;
 
-@Cmd(name="p")
+@Cmd(name="profiler")
 public class ProfilerProbeCmd extends ProbeCmd {
 
 	private static final long serialVersionUID = -1795772179582599885L;

@@ -17,8 +17,8 @@ import com.googlecode.greysanatomy.probe.Probe;
 import com.googlecode.greysanatomy.probe.ProbeListener;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
 
-@Cmd(name="w")
-public class WatchProbeCmd extends ProbeCmd {
+@Cmd(name="script")
+public class ScriptProbeCmd extends ProbeCmd {
 
 	private static final long serialVersionUID = 3287190038048017909L;
 	

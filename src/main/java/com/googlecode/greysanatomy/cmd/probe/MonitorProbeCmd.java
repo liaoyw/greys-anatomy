@@ -66,7 +66,7 @@ import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
  * @author vlinux
  *
  */
-@Cmd(name="m")
+@Cmd(name="monitor")
 public class MonitorProbeCmd extends ProbeCmd {
 
 	private static final long serialVersionUID = -5735449087616204781L;

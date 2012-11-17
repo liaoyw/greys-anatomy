@@ -1,6 +1,6 @@
 package com.googlecode.greysanatomy.network;
 
-import static com.googlecode.greysanatomy.agent.JavaPerfClassFileTransformer.transform;
+import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
 import static java.lang.String.format;
 import static java.util.concurrent.Executors.newCachedThreadPool;
 
@@ -29,7 +29,7 @@ import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.googlecode.greysanatomy.agent.JavaPerfClassFileTransformer.TransformResult;
+import com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.TransformResult;
 import com.googlecode.greysanatomy.cmd.BaseCmd;
 import com.googlecode.greysanatomy.cmd.RespCmd;
 import com.googlecode.greysanatomy.cmd.RespCmd.RespCmdSender;

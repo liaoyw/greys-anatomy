@@ -20,7 +20,7 @@ import com.googlecode.greysanatomy.probe.ProbeListener;
 import com.googlecode.greysanatomy.probe.Probes;
 import com.googlecode.greysanatomy.util.ClassUtils;
 
-public class JavaPerfClassFileTransformer implements ClassFileTransformer {
+public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
 
@@ -29,7 +29,7 @@ public class JavaPerfClassFileTransformer implements ClassFileTransformer {
 	private final int id;
 	private final List<CtMethod> modifiedMethods;
 
-	private JavaPerfClassFileTransformer(
+	private GreysAnatomyClassFileTransformer(
 			final String perfClzRegex,
 			final String perfMthRegex, final ProbeListener listener, final List<CtMethod> modifiedMethods) {
 		this.perfClzRegex = perfClzRegex;
@@ -130,7 +130,7 @@ public class JavaPerfClassFileTransformer implements ClassFileTransformer {
 			final ProbeListener listener) throws UnmodifiableClassException {
 		
 		final List<CtMethod> modifiedMethods = new ArrayList<CtMethod>();
-		JavaPerfClassFileTransformer jcft = new JavaPerfClassFileTransformer(perfClzRegex, perfMthRegex, listener, modifiedMethods);
+		GreysAnatomyClassFileTransformer jcft = new GreysAnatomyClassFileTransformer(perfClzRegex, perfMthRegex, listener, modifiedMethods);
 		instrumentation.addTransformer(jcft,true);
 		final List<Class<?>> modifiedClasses = new ArrayList<Class<?>>();
 		for( Class<?> clazz : instrumentation.getAllLoadedClasses() ) {

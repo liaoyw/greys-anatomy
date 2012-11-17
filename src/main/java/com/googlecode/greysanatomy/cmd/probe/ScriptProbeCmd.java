@@ -24,7 +24,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 
 	private static final long serialVersionUID = 3287190038048017909L;
 	
-	@CmdArg(name="sfn", nullable=true)
+	@CmdArg(name="sf", nullable=true)
 	private String scriptFilename;
 
 	public static class TLS {

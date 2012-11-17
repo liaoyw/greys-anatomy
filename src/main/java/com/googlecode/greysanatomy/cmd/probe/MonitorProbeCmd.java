@@ -86,7 +86,7 @@ public class MonitorProbeCmd extends ProbeCmd {
 	/*
 	 * 命令参数：监听周期
 	 */
-	@CmdArg(name="c")
+	@CmdArg(name="cy")
 	private int cycle = 120;
 
 	/*

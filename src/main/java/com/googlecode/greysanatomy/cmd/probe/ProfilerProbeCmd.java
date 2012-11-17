@@ -9,18 +9,18 @@ import com.googlecode.greysanatomy.probe.ProbeListener;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
 import com.googlecode.greysanatomy.util.ProfilerUtils;
 
-@Cmd(name="profile")
+@Cmd(name="p")
 public class ProfilerProbeCmd extends ProbeCmd {
 
 	private static final long serialVersionUID = -1795772179582599885L;
 
-	@CmdArg(name="enter-class", nullable=false)
+	@CmdArg(name="ec", nullable=false)
 	private String enterClassRegex;
 	
-	@CmdArg(name="enter-method", nullable=false)
+	@CmdArg(name="em", nullable=false)
 	private String enterMethodRegex;
 	
-	@CmdArg(name="cost-limit", nullable=false)
+	@CmdArg(name="c", nullable=false)
 	private long costLimit;
 	
 	@Override

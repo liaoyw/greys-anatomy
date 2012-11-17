@@ -12,7 +12,7 @@ import com.googlecode.greysanatomy.probe.Probes;
  * @author vlinux
  *
  */
-@Cmd(name="jobs")
+@Cmd(name="jb")
 public class JobsActionCmd extends ActionCmd {
 
 	private static final long serialVersionUID = -1754774384841390724L;

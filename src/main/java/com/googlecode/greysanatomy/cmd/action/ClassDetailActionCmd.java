@@ -10,12 +10,12 @@ import com.googlecode.greysanatomy.cmd.annotation.Cmd;
 import com.googlecode.greysanatomy.cmd.annotation.CmdArg;
 import com.googlecode.greysanatomy.util.RefDetailUtils;
 
-@Cmd(name = "detail-class")
+@Cmd(name = "dc")
 public class ClassDetailActionCmd extends ActionCmd {
 
 	private static final long serialVersionUID = 5352482967201077328L;
 
-	@CmdArg(name = "class", nullable = false)
+	@CmdArg(name = "c", nullable = false)
 	private String classRegex;
 
 	@Override

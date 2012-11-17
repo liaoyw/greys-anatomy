@@ -17,13 +17,13 @@ public abstract class ProbeCmd extends BaseCmd {
 	/*
 	 * 命令参数：监听类正则表达式
 	 */
-	@CmdArg(name="class", nullable=false)
+	@CmdArg(name="c", nullable=false)
 	private String perfClzRegex;
 	
 	/*
 	 * 命令参数：监听方法正则表达式
 	 */
-	@CmdArg(name="method", nullable=false)
+	@CmdArg(name="m", nullable=false)
 	private String perfMthRegex;
 	
 	public String getPerfClzRegex() {

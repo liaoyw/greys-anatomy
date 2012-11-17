@@ -11,15 +11,15 @@ import com.googlecode.greysanatomy.cmd.annotation.Cmd;
 import com.googlecode.greysanatomy.cmd.annotation.CmdArg;
 import com.googlecode.greysanatomy.util.RefDetailUtils;
 
-@Cmd(name="detail-method")
+@Cmd(name="dm")
 public class MethodDetailActionCmd extends ActionCmd {
 
 	private static final long serialVersionUID = -2356735884270740021L;
 
-	@CmdArg(name="class", nullable=false)
+	@CmdArg(name="c", nullable=false)
 	private String classRegex;
 	
-	@CmdArg(name="method", nullable=false)
+	@CmdArg(name="m", nullable=false)
 	private String methodRegex;
 	
 	@Override

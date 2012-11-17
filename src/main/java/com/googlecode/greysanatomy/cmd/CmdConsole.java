@@ -65,7 +65,7 @@ public class CmdConsole {
 		
 		initCmds();
 		
-		new Thread("javaperf-cmdconsole"){
+		new Thread("ga-cmd-console"){
 			
 			@Override
 			public void run() {

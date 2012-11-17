@@ -3,6 +3,8 @@ package com.googlecode.greysanatomy.cmd.probe;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.script.Invocable;
 import javax.script.ScriptEngine;
@@ -25,6 +27,24 @@ public class ScriptProbeCmd extends ProbeCmd {
 	@CmdArg(name="sfn", nullable=true)
 	private String scriptFilename;
 
+	public static class TLS {
+		
+		private final ThreadLocal<Map<String,Object>> tls = new ThreadLocal<Map<String,Object>>();
+		
+		public TLS() {
+			tls.set(new HashMap<String,Object>());
+		}
+		
+		public void put(String name, Object value) {
+			tls.get().put(name,value);
+		}
+		
+		public Object get(String name) {
+			return tls.get().get(name);
+		}
+		
+	}
+	
 	public static class Output {
 		
 		private final RespCmdSender sender;
@@ -43,10 +63,10 @@ public class ScriptProbeCmd extends ProbeCmd {
 	
 	public static interface ScriptListener {
 		
-		void before(Probe p, Output output);
-		void success(Probe p, Output output);
-		void exception(Probe p, Output output);
-		void finished(Probe p, Output output);
+		void before(Probe p, Output output, TLS tls);
+		void success(Probe p, Output output, TLS tls);
+		void exception(Probe p, Output output, TLS tls);
+		void finished(Probe p, Output output, TLS tls);
 		
 	}
 	
@@ -65,6 +85,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 			return null;
 		}
 		
+		final TLS tls = new TLS();
 		final Output output = new Output(this, sender);
 		final ScriptEngine jsEngine = new ScriptEngineManager().getEngineByExtension("js");
 		final Invocable invoke = (Invocable) jsEngine;
@@ -86,7 +107,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 			public void onBefore(final Probe p) {
 				
 				try {
-					scriptListener.before(p, output);
+					scriptListener.before(p, output, tls);
 				}catch(Throwable t) {
 					// ignore
 				}
@@ -97,7 +118,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 			public void onSuccess(final Probe p) {
 				
 				try {
-					scriptListener.success(p, output);
+					scriptListener.success(p, output, tls);
 				}catch(Throwable t) {
 					// ignore
 				}
@@ -108,7 +129,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 			public void onException(final Probe p) {
 				
 				try {
-					scriptListener.exception(p, output);
+					scriptListener.exception(p, output, tls);
 				}catch(Throwable t) {
 					// ignore
 				}
@@ -119,7 +140,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 			public void onFinish(final Probe p) {
 				
 				try {
-					scriptListener.finished(p, output);
+					scriptListener.finished(p, output, tls);
 				}catch(Throwable t) {
 					// ignore
 				}

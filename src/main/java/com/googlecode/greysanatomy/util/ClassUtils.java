@@ -279,7 +279,6 @@ public class ClassUtils {
 			field.setAccessible(true);
 			final Object obj = field.get(target);
 			field.setAccessible(isAccessible);
-			System.out.println("fuck");
 			return obj;
 		} catch(Exception e) {
 			return null;

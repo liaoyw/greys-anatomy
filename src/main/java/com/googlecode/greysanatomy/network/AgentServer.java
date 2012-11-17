@@ -42,6 +42,7 @@ import com.googlecode.greysanatomy.network.coder.ProtocolEncoder;
 import com.googlecode.greysanatomy.probe.ProbeListener;
 import com.googlecode.greysanatomy.probe.Probes;
 import com.googlecode.greysanatomy.util.JvmUtils;
+import com.googlecode.greysanatomy.util.LogoUtils;
 import com.googlecode.greysanatomy.util.JvmUtils.ShutdownHook;
 
 
@@ -252,6 +253,7 @@ public class AgentServer {
 	public static synchronized void init(Instrumentation instrumentation, int port) {
 		if( null == instance ) {
 			instance = new AgentServer(instrumentation, port);
+			logger.info(LogoUtils.logo());
 		}
 	}
 	

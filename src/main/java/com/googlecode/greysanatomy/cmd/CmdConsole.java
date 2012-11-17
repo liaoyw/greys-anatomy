@@ -9,6 +9,7 @@ import java.util.Scanner;
 import com.googlecode.greysanatomy.cmd.annotation.Cmd;
 import com.googlecode.greysanatomy.cmd.annotation.CmdArg;
 import com.googlecode.greysanatomy.util.ClassUtils;
+import com.googlecode.greysanatomy.util.LogoUtils;
 
 /**
  * ÃüÁî¿ØÖÆÌ¨
@@ -64,6 +65,10 @@ public class CmdConsole {
 		this.pw = new PrintWriter(System.out);
 		
 		initCmds();
+		
+		pw.println(LogoUtils.logo());
+		pw.println();
+		pw.flush();
 		
 		new Thread("ga-cmd-console"){
 			

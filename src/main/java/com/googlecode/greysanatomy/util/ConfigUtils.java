@@ -7,7 +7,7 @@ package com.googlecode.greysanatomy.util;
  */
 public class ConfigUtils {
 
-	public static final int DEFAULT_AGENT_SERVER_PORT = 7631;
+	public static final int DEFAULT_AGENT_SERVER_PORT = 13658;
 	
 	public static final int DEFAULT_CONNECT_TIMEOUT = 60000;
 	

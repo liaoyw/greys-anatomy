@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
@@ -255,10 +254,36 @@ public class ClassUtils {
 		return filePath.replaceAll("/", ".");
 	}
 	
-	public static void main(String... args) throws ClassNotFoundException, NotFoundException {
-		
-		CtClass cc = ClassPool.getDefault().getCtClass(toClassPath("java/lang/String"));
-		System.out.println(cc.getName());
+	
+	/**
+	 * 获取一个对象的field
+	 * @param target
+	 * @param fieldName
+	 * @return
+	 */
+	public static Object getField(Object target, String fieldName) {
+		if( null == target ) {
+			return null;
+		}
+		Class<?> clazz = target.getClass();
+		if( null == fieldName
+				|| fieldName.isEmpty()) {
+			return null;
+		}
+		try {
+			Field field = clazz.getDeclaredField(fieldName);
+			if( null == field ) {
+				return null;
+			}
+			boolean isAccessible = field.isAccessible();
+			field.setAccessible(true);
+			final Object obj = field.get(target);
+			field.setAccessible(isAccessible);
+			System.out.println("fuck");
+			return obj;
+		} catch(Exception e) {
+			return null;
+		}
 		
 	}
 	

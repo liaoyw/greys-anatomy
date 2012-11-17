@@ -93,6 +93,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 		final Invocable invoke = (Invocable) jsEngine;
 		final ScriptListener scriptListener;
 		try {
+			jsEngine.eval("var $f=com.googlecode.greysanatomy.util.ClassUtils.getField;");
 			jsEngine.eval(new FileReader(scriptFile));
 			scriptListener = invoke.getInterface(ScriptListener.class);
 		} catch (FileNotFoundException e) {

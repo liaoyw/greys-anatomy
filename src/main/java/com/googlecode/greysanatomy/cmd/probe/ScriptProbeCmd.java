@@ -75,6 +75,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 		
 		if( null == scriptFilename
 				|| scriptFilename.isEmpty()) {
+			sender.send(new RespCmd(getId(), "script file not exist."));
 			return null;
 		}
 		
@@ -82,6 +83,7 @@ public class ScriptProbeCmd extends ProbeCmd {
 		if( !scriptFile.isFile()
 				|| !scriptFile.exists()
 				|| !scriptFile.canRead()) {
+			sender.send(new RespCmd(getId(), "script file not exist."));
 			return null;
 		}
 		

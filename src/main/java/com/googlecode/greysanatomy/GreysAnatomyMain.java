@@ -42,8 +42,15 @@ public class GreysAnatomyMain {
 		
 		VirtualMachine vm = VirtualMachine.attach(attachVmd);
 		
+		final StringBuilder configSB = new StringBuilder();
 		if( args.length >= 2 ) {
-			vm.loadAgent(JARFILE, args[1]);
+			for( int i=1;i<args.length;i++ ) {
+				configSB.append(args[i]).append(",");
+			}
+		}
+		
+		if( args.length >= 2 ) {
+			vm.loadAgent(JARFILE, configSB.toString());
 		} else {
 			vm.loadAgent(JARFILE);
 		}
@@ -51,8 +58,9 @@ public class GreysAnatomyMain {
 		
 		vm.detach();
 		
-		AgentClient.init(ConfigUtils.DEFAULT_AGENT_SERVER_PORT, ConfigUtils.DEFAULT_CONNECT_TIMEOUT);
-		logger.info("attach done! pid={}; JarFile={}", args[0], JARFILE);
+		final int port = ConfigUtils.getPort(configSB.toString());
+		AgentClient.init(port, ConfigUtils.DEFAULT_CONNECT_TIMEOUT);
+		logger.info("attach done! pid={}; port={}; JarFile={}", new Object[]{args[0], port, JARFILE});
 		
 	}
 }

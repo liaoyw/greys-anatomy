@@ -271,19 +271,36 @@ public class ClassUtils {
 			return null;
 		}
 		try {
-			Field field = clazz.getDeclaredField(fieldName);
-			if( null == field ) {
-				return null;
-			}
-			boolean isAccessible = field.isAccessible();
-			field.setAccessible(true);
-			final Object obj = field.get(target);
-			field.setAccessible(isAccessible);
-			return obj;
+			return getField(clazz, target, fieldName);
 		} catch(Exception e) {
 			return null;
 		}
 		
 	}
 	
+	private static Object getField(Class<?> clazz, Object target, String fieldName) throws SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException {
+		
+		if( null == clazz ) {
+			return null;
+		}
+		
+		final Field field;
+		try {
+			field = clazz.getDeclaredField(fieldName);
+		}catch(NoSuchFieldException nsfe) {
+			return getField(clazz.getSuperclass(), target, fieldName);
+		}
+		
+		boolean isAccessible = field.isAccessible();
+		try {
+			field.setAccessible(true);
+			final Object obj = field.get(target);
+			field.setAccessible(isAccessible);
+			return obj;
+		}finally {
+			field.setAccessible(isAccessible);
+		}
+		
+	}
+
 }

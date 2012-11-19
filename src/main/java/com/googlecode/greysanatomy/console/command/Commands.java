@@ -13,6 +13,8 @@ import jline.console.ConsoleReader;
 import jline.console.completer.AggregateCompleter;
 import jline.console.completer.ArgumentCompleter;
 import jline.console.completer.Completer;
+import jline.console.completer.FileNameCompleter;
+import jline.console.completer.NullCompleter;
 import jline.console.completer.StringsCompleter;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
@@ -146,14 +148,23 @@ public class Commands {
 			ArgumentCompleter argCompleter = new ArgumentCompleter();
 			completers.add(argCompleter);
 			argCompleter.getCompleters().add(new StringsCompleter(entry.getKey()));
-			final Set<String> fields = new HashSet<String>();
 			for( Field field : GaReflectUtils.getFileds(entry.getValue()) ) {
 				if( field.isAnnotationPresent(Arg.class) ) {
 					Arg arg = field.getAnnotation(Arg.class);
-					fields.add("-"+arg.name());
+					argCompleter.getCompleters().add(new StringsCompleter("-"+arg.name()));
+					switch (arg.type()) {
+					case FILE:
+						argCompleter.getCompleters().add(new FileNameCompleter());
+						break;
+					case STR:
+					default:
+						argCompleter.getCompleters().add(new InputCompleter());
+						break;
+					}
+					
 				}
 			}//for
-			argCompleter.getCompleters().add(new StringsCompleter(fields));
+			argCompleter.getCompleters().add(new NullCompleter());
 		}
 		return completers;
 	}

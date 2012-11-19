@@ -1,6 +1,7 @@
 package com.googlecode.greysanatomy.console.command;
 
 import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
+import static com.googlecode.greysanatomy.console.command.annotation.ArgType.FILE;
 import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.registJob;
 
 import java.io.File;
@@ -41,7 +42,7 @@ public class JavaScriptCommand extends Command {
 	@Arg(name="method")
 	private String methodRegex;
 	
-	@Arg(name = "file")
+	@Arg(name="file", type=FILE)
 	private String scriptFilename;
 
 	

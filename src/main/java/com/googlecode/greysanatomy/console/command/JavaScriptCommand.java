@@ -31,7 +31,7 @@ import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
  * @author vlinux
  * 
  */
-@Cmd("js")
+@Cmd("javascript")
 public class JavaScriptCommand extends Command {
 
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");

@@ -1,7 +1,6 @@
 package com.googlecode.greysanatomy.console.command;
 
 import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
-import static com.googlecode.greysanatomy.console.command.annotation.ArgType.FILE;
 import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.registJob;
 
 import java.io.File;
@@ -24,6 +23,8 @@ import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
+import com.googlecode.greysanatomy.probe.Probes;
+import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**
  * javascript语言增强
@@ -42,8 +43,8 @@ public class JavaScriptCommand extends Command {
 	@Arg(name="method")
 	private String methodRegex;
 	
-	@Arg(name="file", type=FILE)
-	private String scriptFilename;
+	@Arg(name="file")
+	private File scriptFile;
 
 	
 	/**
@@ -111,7 +112,6 @@ public class JavaScriptCommand extends Command {
 			@Override
 			public void action(Info info, final Sender sender) throws Throwable {
 				
-				final File scriptFile = new File(scriptFilename);
 				if( !scriptFile.isFile()
 						|| !scriptFile.exists()
 						|| !scriptFile.canRead()) {
@@ -178,6 +178,15 @@ public class JavaScriptCommand extends Command {
 				// 注册任务
 				registJob(info.getChannel(), result.getId());
 				
+				// 激活任务
+				Probes.activeJob(result.getId());
+				
+				final StringBuilder message = new StringBuilder();
+				message.append(GaStringUtils.LINE);
+				message.append(String.format("done. probe:c-Cnt=%s,m-Cnt=%s\n", 
+						result.getModifiedClasses().size(),
+						result.getModifiedMethods().size()));
+				sender.send(false, message.toString());
 			}
 			
 		};

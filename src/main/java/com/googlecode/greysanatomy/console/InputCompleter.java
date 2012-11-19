@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.command;
+package com.googlecode.greysanatomy.console;
 
 import java.util.List;
 

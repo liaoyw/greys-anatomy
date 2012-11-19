@@ -10,6 +10,8 @@ import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
+import com.googlecode.greysanatomy.probe.Probes;
+import com.googlecode.greysanatomy.util.GaStringUtils;
 import com.googlecode.greysanatomy.util.ProfilerUtils;
 
 @Cmd("profiler")
@@ -94,7 +96,16 @@ public class ProfilerCommand extends Command {
 				
 				// 注册任务
 				registJob(info.getChannel(), result.getId());
+			
+				// 激活任务
+				Probes.activeJob(result.getId());
 				
+				final StringBuilder message = new StringBuilder();
+				message.append(GaStringUtils.LINE);
+				message.append(String.format("done. probe:c-Cnt=%s,m-Cnt=%s\n", 
+						result.getModifiedClasses().size(),
+						result.getModifiedMethods().size()));
+				sender.send(false, message.toString());
 			}
 			
 		};

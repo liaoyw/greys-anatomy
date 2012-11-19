@@ -20,6 +20,8 @@ import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
+import com.googlecode.greysanatomy.probe.Probes;
+import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**
  * 监控请求命令<br/>
@@ -230,10 +232,19 @@ public class MonitorCommand extends Command {
 					}
 					
 				});
-				
+
 				// 注册任务
 				registJob(info.getChannel(), result.getId());
 				
+				// 激活任务
+				Probes.activeJob(result.getId());
+				
+				final StringBuilder message = new StringBuilder();
+				message.append(GaStringUtils.LINE);
+				message.append(String.format("done. probe:c-Cnt=%s,m-Cnt=%s\n", 
+						result.getModifiedClasses().size(),
+						result.getModifiedMethods().size()));
+				sender.send(false, message.toString());
 			}
 			
 		};

@@ -84,9 +84,20 @@ public class Probes {
 		final int id = idseq.incrementAndGet();
 		Job job = new Job();
 		job.id = id;
-		job.isAlive = true;
+		job.isAlive = false;
 		jobs.put(id, job);
 		return id;
+	}
+	
+	/**
+	 * ¼¤»îÒ»¸öjob
+	 * @param id
+	 */
+	public static void activeJob(int id) {
+		Job job = jobs.get(id);
+		if( null != job ) {
+			job.isAlive = true;
+		}
 	}
 	
 	/**

@@ -1,5 +1,6 @@
 package com.googlecode.greysanatomy.console.command;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import jline.console.completer.StringsCompleter;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
 
+import com.googlecode.greysanatomy.console.FileValueConverter;
+import com.googlecode.greysanatomy.console.InputCompleter;
 import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.ArgVerifier;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
@@ -61,11 +64,20 @@ public class Commands {
 		return fields;
 	}
 	
+	/**
+	 * 根据标注构造参数解析
+	 * @param clazz
+	 * @return
+	 */
 	private static OptionParser getOptionParser(Class<?> clazz) {
 		final OptionParser parser = new OptionParser();
 		for( Field field : getArgFields(clazz) ) {
 			final Arg arg = field.getAnnotation(Arg.class);
-			parser.accepts(arg.name()).withRequiredArg().ofType(field.getType()).required();
+			parser.accepts(arg.name(), arg.description())
+				.withRequiredArg()
+				.withValuesConvertedBy(new FileValueConverter())
+				.ofType(field.getType())
+				.required();
 		}
 		return parser;
 	}
@@ -152,14 +164,13 @@ public class Commands {
 				if( field.isAnnotationPresent(Arg.class) ) {
 					Arg arg = field.getAnnotation(Arg.class);
 					argCompleter.getCompleters().add(new StringsCompleter("-"+arg.name()));
-					switch (arg.type()) {
-					case FILE:
+					if( File.class.isAssignableFrom(field.getType()) ) {
 						argCompleter.getCompleters().add(new FileNameCompleter());
-						break;
-					case STR:
-					default:
+					} else if( Boolean.class.isAssignableFrom(field.getType()) 
+							|| boolean.class.isAssignableFrom(field.getType())) {
+						argCompleter.getCompleters().add(new StringsCompleter("true","false"));
+					} else {
 						argCompleter.getCompleters().add(new InputCompleter());
-						break;
 					}
 					
 				}

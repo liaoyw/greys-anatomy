@@ -22,10 +22,10 @@ public @interface Arg {
 	public boolean isRequired() default true;
 	
 	/**
-	 * 参数类型
+	 * 参数注释
 	 * @return
 	 */
-	public ArgType type() default ArgType.STR;
+	public String description() default "";
 	
 	/**
 	 * 参数校验

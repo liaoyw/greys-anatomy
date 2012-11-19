@@ -14,6 +14,8 @@ import org.apache.commons.lang.StringUtils;
  */
 public class GaStringUtils {
 
+	public static final String LINE = "---------------------------------------------------------------\n";
+	
 	/**
 	 * ½øÐÐURL-ENCODE
 	 * @param str
@@ -63,7 +65,6 @@ public class GaStringUtils {
 			logoSB.append(scanner.nextLine()).append("\n");
 		}
 		return logoSB.toString();
-		
 	}
 	
 }

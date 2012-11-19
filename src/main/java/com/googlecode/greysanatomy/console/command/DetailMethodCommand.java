@@ -7,6 +7,7 @@ import java.lang.reflect.Method;
 import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.util.GaDetailUtils;
+import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**
  * 展示方法信息
@@ -54,7 +55,7 @@ public class DetailMethodCommand extends Command {
 					
 				}//for
 				
-				message.append("---------------------------------------------------------------\n");
+				message.append(GaStringUtils.LINE);
 				message.append(format("done. method result: match-class=%s; match-method=%s\n", clzCnt, mthCnt));
 				
 				sender.send(true, message.toString());

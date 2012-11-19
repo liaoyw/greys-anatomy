@@ -7,7 +7,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.CodeSource;
 
-import com.googlecode.greysanatomy.probe.Probes;
+import com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer;
 
 public class GaDetailUtils {
 
@@ -21,13 +21,31 @@ public class GaDetailUtils {
 		
 		StringBuilder detailSB = new StringBuilder();
 		detailSB.append("class info : ").append(getClassName(clazz)).append("\n");
-		detailSB.append("--------------------------------------------------------------------------------\n");
+		detailSB.append(GaStringUtils.LINE);
 		
 		CodeSource cs = clazz.getProtectionDomain().getCodeSource(); 
 		detailSB.append(format("%15s : %s\n","code-source",null == cs?NULL:cs.getLocation().getFile()));
 		detailSB.append(format("%15s : %s\n","name",getClassName(clazz)));
 		detailSB.append(format("%15s : %s\n","simple-name",clazz.getSimpleName()));
 		detailSB.append(format("%15s : %s\n","modifier",tranModifier(clazz.getModifiers())));
+		
+		// interface
+		{
+			StringBuilder interfaceSB = new StringBuilder();
+			Class<?>[] interfaces = clazz.getInterfaces();
+			if( null == interfaces ) {
+				interfaceSB.append(NULL);
+			} else {
+				for( Class<?> i : interfaces ) {
+					interfaceSB.append(i.getName()).append(",");
+				}
+				if( interfaceSB.length() > 0 ) {
+					interfaceSB.deleteCharAt(interfaceSB.length()-1);
+				}
+				interfaceSB.append("\n");
+			}
+			detailSB.append(format("%15s : %s","interfaces",interfaceSB.toString()));
+		}
 		
 		// super-class
 		{
@@ -139,7 +157,7 @@ public class GaDetailUtils {
 	public static String detail(Method method) {
 		StringBuilder detailSB = new StringBuilder();
 		detailSB.append("method info : ").append(format("%s->%s",method.getDeclaringClass().getName(), method.getName())).append("\n");
-		detailSB.append("--------------------------------------------------------------------------------\n");
+		detailSB.append(GaStringUtils.LINE);
 
 		detailSB.append(format("%15s : %s\n","declaring-class",getClassName(method.getDeclaringClass())));
 		detailSB.append(format("%15s : %s\n","modifier",tranModifier(method.getModifiers())));
@@ -202,11 +220,8 @@ public class GaDetailUtils {
 	
 	public static void main(String... args) {
 
-		Class<?> clazz = Probes.class;
-		for( Method method : clazz.getDeclaredMethods() ) {
-			final String detail = detail(method);
-			System.out.println(detail);
-		}
+		Class<?> clazz = GreysAnatomyClassFileTransformer.class;
+		System.out.println(detail(clazz));
 		
 
 	}

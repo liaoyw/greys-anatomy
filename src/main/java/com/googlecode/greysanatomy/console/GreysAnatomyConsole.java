@@ -1,6 +1,7 @@
 package com.googlecode.greysanatomy.console;
 
-import static org.apache.commons.lang.StringUtils.*;
+import static org.apache.commons.lang.StringUtils.EMPTY;
+import static org.apache.commons.lang.StringUtils.isBlank;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.Configer;
 import com.googlecode.greysanatomy.console.command.Commands;
+import com.googlecode.greysanatomy.console.network.coder.KillJobsCmd;
 import com.googlecode.greysanatomy.console.network.coder.ReqCmd;
 import com.googlecode.greysanatomy.console.network.coder.RespCmd;
 import com.googlecode.greysanatomy.util.GaStringUtils;
@@ -104,6 +106,7 @@ public class GreysAnatomyConsole {
 				if( !isF ) {
 					write("abort it.");
 					isF = true;
+					channel.write(new KillJobsCmd()).awaitUninterruptibly();
 				}
 			}
 			

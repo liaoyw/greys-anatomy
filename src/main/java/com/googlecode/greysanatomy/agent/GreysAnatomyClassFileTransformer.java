@@ -139,7 +139,9 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			}
 		}
 		try {
-			instrumentation.retransformClasses(modifiedClasses.toArray(new Class[0]));
+			synchronized (GreysAnatomyClassFileTransformer.class) {
+				instrumentation.retransformClasses(modifiedClasses.toArray(new Class[0]));
+			}
 		}finally {
 			instrumentation.removeTransformer(jcft);
 		}

@@ -67,4 +67,16 @@ public class GaStringUtils {
 		return logoSB.toString();
 	}
 	
+	/**
+	 * ×óÌî³ä
+	 * @param sb
+	 * @param c
+	 * @param str
+	 */
+	public static void leftFill(StringBuilder sb, int c, String str) {
+		for( int i=0; i<c; i++ ) {
+			sb.append(str);
+		}
+	}
+	
 }

@@ -5,23 +5,25 @@ import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.regi
 import static com.googlecode.greysanatomy.probe.ProbeJobs.activeJob;
 
 import java.lang.instrument.Instrumentation;
-import java.lang.reflect.Method;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.TransformResult;
 import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
-import com.googlecode.greysanatomy.probe.Probe.TargetConstructor;
-import com.googlecode.greysanatomy.probe.Probe.TargetMethod;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
 import com.googlecode.greysanatomy.util.GaStringUtils;
 
@@ -100,15 +102,15 @@ public class MonitorCommand extends Command {
 	 *
 	 */
 	private static class Key {
-		private final Class<?> clazz;
-		private final Method method;
-		private Key(Class<?> clazz, Method method) {
-			this.clazz = clazz;
-			this.method = method;
+		private final String className;
+		private final String behaviorName;
+		private Key(String className, String behaviorName) {
+			this.className = className;
+			this.behaviorName = behaviorName;
 		}
 		@Override
 		public int hashCode() {
-			return clazz.hashCode() + method.hashCode();
+			return className.hashCode() + behaviorName.hashCode();
 		}
 		@Override
 		public boolean equals(Object obj) {
@@ -117,7 +119,7 @@ public class MonitorCommand extends Command {
 				return false;
 			}
 			Key okey = (Key)obj;
-			return clazz.equals(okey.clazz) && method.equals(okey.method);
+			return StringUtils.equals(okey.className, className) && StringUtils.equals(okey.behaviorName, behaviorName);
 		}
 		
 	}
@@ -148,22 +150,13 @@ public class MonitorCommand extends Command {
 					
 					@Override
 					public void onBefore(Probe p) {
-						// 不监控构造函数
-						if( p.getTarget().getTargetBehavior() instanceof TargetConstructor ) {
-							return;
-						}
 						beginTimestamp.set(System.currentTimeMillis());
 					}
 
 					@Override
 					public void onFinish(Probe p) {
-						// 不监控构造函数
-						if( p.getTarget().getTargetBehavior() instanceof TargetConstructor ) {
-							return;
-						}
 						final long cost = System.currentTimeMillis() - beginTimestamp.get();
-						final TargetMethod tm = (TargetMethod)p.getTarget().getTargetBehavior();
-						final Key key = new Key(p.getTarget().getTargetClass(), tm.getMethod());
+						final Key key = new Key(p.getTarget().getTargetClass().getName(), p.getTarget().getTargetBehavior().getName());
 						
 						while(true) {
 							AtomicReference<Data> value = monitorDatas.get(key);
@@ -199,6 +192,9 @@ public class MonitorCommand extends Command {
 
 							@Override
 							public void run() {
+								if( monitorDatas.isEmpty() ) {
+									return;
+								}
 								final String timestamp = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
 								final StringBuilder monitorSB = new StringBuilder();
 								final Iterator<Map.Entry<Key, AtomicReference<Data>>> it = monitorDatas.entrySet().iterator();
@@ -207,8 +203,8 @@ public class MonitorCommand extends Command {
 									final AtomicReference<Data> value = entry.getValue();
 									final Data data = value.get();
 									monitorSB.append(timestamp).append("\t");
-									monitorSB.append(entry.getKey().clazz.getName()).append("\t");
-									monitorSB.append(entry.getKey().method.getName()).append("\t");
+									monitorSB.append(entry.getKey().className).append("\t");
+									monitorSB.append(entry.getKey().behaviorName).append("\t");
 									monitorSB.append(data.total).append("\t");
 									monitorSB.append(data.success).append("\t");
 									monitorSB.append(data.failed).append("\t");
@@ -220,7 +216,7 @@ public class MonitorCommand extends Command {
 									while(!value.compareAndSet(data, new Data()));
 								}//while
 								
-								sender.send(false, monitorSB.toString());
+								sender.send(false, tableFormat(monitorSB.toString()));
 							}
 							
 						}, 0, cycle*1000);
@@ -263,6 +259,83 @@ public class MonitorCommand extends Command {
 			}
 			
 		};
+	}
+	
+	/**
+	 * 表格格式化
+	 * @param output
+	 * @return
+	 */
+	private String tableFormat(String output) {
+		
+		final StringBuilder outputSB = new StringBuilder();
+		final List<String> outputs = new ArrayList<String>();
+		final List<StringBuilder> lines = new ArrayList<StringBuilder>();
+		final StringBuilder titleSB = new StringBuilder();
+		final List<String[]> datas = new ArrayList<String[]>();
+		final int[] colMaxWidths = new int[]{9,5,8,5,7,4,2,9};
+		datas.add(new String[]{"timestamp", "class", "behavior", "total", "success", "fail", "rt","fail-rate"});
+		lines.add(new StringBuilder());
+		
+		final Scanner scan = new Scanner(output);
+		while( scan.hasNextLine() ) {
+			final String[] strs = scan.nextLine().split("\\s+");
+			final String[] cols = new String[]{
+				strs[0]+" "+strs[1],	// timestamp
+				strs[2],				// classname
+				strs[3],				// behavior
+				strs[4],				// total
+				strs[5],				// success
+				strs[6],				// failed
+				strs[7],				// rt
+				strs[8],				// fail-rate
+			};
+			for( int c=0;c<8;c++ ) {
+				colMaxWidths[c] = Math.max(colMaxWidths[c], cols[c].length());
+			}
+			
+			datas.add(cols);
+			lines.add(new StringBuilder());
+			
+		}//while
+		
+		for( int c=0; c<8; c++ ) {
+			titleSB.append("+");
+			GaStringUtils.leftFill(titleSB, colMaxWidths[c]+2, "-");
+		}
+		titleSB.append("+").append("\n");
+		
+		// 遍历行
+		for( int i=0; i<lines.size(); i++) {
+			
+			final StringBuilder lineSB = lines.get(i);
+			final String[] cols = datas.get(i);
+
+			// 遍历列 
+			for( int c=0; c<8; c++ ) {
+				lineSB.append("|");
+				int diff = colMaxWidths[c] - cols[c].length()+1;
+				GaStringUtils.leftFill(lineSB, diff, " ");
+				lineSB.append(cols[c]).append(" ");
+			}
+			
+			lineSB.append("|");
+			outputs.add(lineSB.toString());
+		}//for
+		
+		outputSB.append(titleSB.toString());
+		boolean isTitle = true;
+		for( String o : outputs ) {
+			outputSB.append(o).append("\n");
+			if( isTitle ) {
+				outputSB.append(titleSB.toString());
+				isTitle = false;
+			}
+		}
+		outputSB.append(titleSB.toString());
+		
+		return outputSB.toString();
+		
 	}
 
 }

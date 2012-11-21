@@ -1,5 +1,8 @@
 package com.googlecode.greysanatomy.console.network;
 
+import static com.googlecode.greysanatomy.probe.ProbeJobs.killJob;
+
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -7,8 +10,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.jboss.netty.channel.Channel;
-
-import com.googlecode.greysanatomy.probe.Probes;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * 服务端当前连接上job持有信息 
@@ -17,6 +20,8 @@ import com.googlecode.greysanatomy.probe.Probes;
  */
 public class ChannelJobsHolder {
 
+	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
+	
 	// 持有信息
 	private final static Map<Channel, Set<Integer>> holder = new HashMap<Channel, Set<Integer>>();
 	
@@ -34,6 +39,7 @@ public class ChannelJobsHolder {
 		}//if
 		ids.add(jobid);
 		
+		logger.info("regist job={} for channel={}", jobid, channel.getRemoteAddress());
 	}
 	
 	/**
@@ -45,7 +51,7 @@ public class ChannelJobsHolder {
 		if( holder.containsKey(channel) ) {
 			return holder.get(channel);
 		}
-		return new HashSet<Integer>();
+		return Collections.emptySet();
 	}
 	
 	/**
@@ -59,8 +65,9 @@ public class ChannelJobsHolder {
 			while( it.hasNext() ) {
 				int id = it.next();
 				if( jobids.contains(id) ) {
-					Probes.killJob(id);
+					killJob(id);
 					it.remove();
+					logger.info("unRegist job={} for channel={}", id, channel.getRemoteAddress());
 				}
 			}
 		}
@@ -75,8 +82,9 @@ public class ChannelJobsHolder {
 			final Iterator<Integer> it = holder.get(channel).iterator();
 			while( it.hasNext() ) {
 				int id = it.next();
-				Probes.killJob(id);
+				killJob(id);
 				it.remove();
+				logger.info("unRegist job={} for channel={}", id, channel.getRemoteAddress());
 			}
 			holder.remove(channel);
 		}

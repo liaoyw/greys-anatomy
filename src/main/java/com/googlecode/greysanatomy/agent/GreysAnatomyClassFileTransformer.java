@@ -1,5 +1,8 @@
 package com.googlecode.greysanatomy.agent;
 
+import static com.googlecode.greysanatomy.probe.ProbeJobs.createJob;
+import static com.googlecode.greysanatomy.probe.ProbeJobs.register;
+
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -7,7 +10,10 @@ import java.lang.instrument.UnmodifiableClassException;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
+import javassist.ByteArrayClassPath;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
@@ -29,6 +35,11 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 	private final int id;
 	private final List<CtMethod> modifiedMethods;
 
+	/*
+	 * 对之前做的类进行一个缓存
+	 */
+	private final static Map<String,byte[]> classBytesCache = new ConcurrentHashMap<String,byte[]>();
+	
 	private GreysAnatomyClassFileTransformer(
 			final String perfClzRegex,
 			final String perfMthRegex, final ProbeListener listener, final List<CtMethod> modifiedMethods) {
@@ -36,8 +47,7 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 		this.perfMthRegex = perfMthRegex;
 		this.modifiedMethods = modifiedMethods;
 		
-		id = Probes.createJob();
-		Probes.register(id, listener);
+		register(id = createJob(), listener);
 	}
 
 	@Override
@@ -51,36 +61,41 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			return null;
 		}
 		
-		final ClassPool cp = new ClassPool(null);
-		cp.insertClassPath(new LoaderClassPath(loader));
-//		cp.childFirstLookup = true;
-		
-//		logger.info("transform {}, cp.loader={} loader={}.", new Object[]{className, cp.getClassLoader(), loader});
-		
-		CtClass cc = null;
-		byte[] datas;
-		try {
-			cc = cp.getCtClass(className);
-			cc.defrost();
-			final CtMethod[] cms = cc.getDeclaredMethods();
-			for( int index=0; index<cms.length; index++ ) {
-				CtMethod cm = cms[index];
-				if( cm.getName().matches(perfMthRegex) ) {
-					modifiedMethods.add(cm);
-					Probes.mine(id, loader, cc, cm);
-				}
-			}//for
-			datas = cc.toBytecode();
-		} catch (Exception e) {
-			logger.warn("transform {} failed!", className, e);
-			datas = null;
-		} finally {
-			if( null != cc ) {
-				cc.freeze();
+		// 这里做一个并发控制，防止两边并发对类进行编译，影响缓存
+		synchronized (classBytesCache) {
+			final ClassPool cp = new ClassPool(null);
+			cp.insertClassPath(new LoaderClassPath(loader));
+			if( classBytesCache.containsKey(className) ) {
+				cp.insertClassPath(new ByteArrayClassPath(className, classBytesCache.get(className)));
 			}
+			
+			CtClass cc = null;
+			byte[] datas;
+			try {
+				cc = cp.getCtClass(className);
+				cc.defrost();
+				final CtMethod[] cms = cc.getDeclaredMethods();
+				for( int index=0; index<cms.length; index++ ) {
+					CtMethod cm = cms[index];
+					if( cm.getName().matches(perfMthRegex) ) {
+						modifiedMethods.add(cm);
+						Probes.mine(id, loader, cc, cm);
+					}
+				}//for
+				datas = cc.toBytecode();
+			} catch (Exception e) {
+				logger.warn("transform {} failed!", className, e);
+				datas = null;
+			} finally {
+				if( null != cc ) {
+					cc.freeze();
+				}
+			}
+			
+			classBytesCache.put(className, datas);
+			return datas;
 		}
 		
-		return datas;
 	}
 	
 	

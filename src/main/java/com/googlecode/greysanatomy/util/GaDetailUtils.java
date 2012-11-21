@@ -29,6 +29,23 @@ public class GaDetailUtils {
 		detailSB.append(format("%15s : %s\n","simple-name",clazz.getSimpleName()));
 		detailSB.append(format("%15s : %s\n","modifier",tranModifier(clazz.getModifiers())));
 		
+		// annotation
+		{
+			StringBuilder annoSB = new StringBuilder();
+			Annotation[] annos = clazz.getDeclaredAnnotations();
+			if( null != annos && annos.length > 0 ) {
+				for( Annotation anno : annos ) {
+					annoSB.append(getClassName(anno.annotationType())).append(",");
+				}
+				if( annoSB.length() > 0 ) {
+					annoSB.deleteCharAt(annoSB.length()-1);
+				}
+			} else {
+				annoSB.append(NULL);
+			}
+			detailSB.append(format("%15s : %s\n","annotation",annoSB.toString()));
+		}
+		
 		// interface
 		{
 			StringBuilder interfaceSB = new StringBuilder();
@@ -66,23 +83,6 @@ public class GaDetailUtils {
 				detailSB.append(format("%15s : %s\n","super-class",NULL));
 			}
 			
-		}
-		
-		// annotation
-		{
-			StringBuilder annoSB = new StringBuilder();
-			Annotation[] annos = clazz.getDeclaredAnnotations();
-			if( null != annos && annos.length > 0 ) {
-				for( Annotation anno : annos ) {
-					annoSB.append(getClassName(anno.annotationType())).append(",");
-				}
-				if( annoSB.length() > 0 ) {
-					annoSB.deleteCharAt(annoSB.length()-1);
-				}
-			} else {
-				annoSB.append(NULL);
-			}
-			detailSB.append(format("%15s : %s\n","annotation",annoSB.toString()));
 		}
 		
 		// class-loader

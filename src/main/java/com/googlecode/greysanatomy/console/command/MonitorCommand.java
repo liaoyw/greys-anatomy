@@ -2,6 +2,7 @@ package com.googlecode.greysanatomy.console.command;
 
 import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
 import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.registJob;
+import static com.googlecode.greysanatomy.probe.ProbeJobs.activeJob;
 
 import java.lang.instrument.Instrumentation;
 import java.lang.reflect.Method;
@@ -20,7 +21,6 @@ import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
-import com.googlecode.greysanatomy.probe.Probes;
 import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**
@@ -110,6 +110,10 @@ public class MonitorCommand extends Command {
 		}
 		@Override
 		public boolean equals(Object obj) {
+			if( null == obj
+					|| !(obj instanceof Key) ) {
+				return false;
+			}
 			Key okey = (Key)obj;
 			return clazz.equals(okey.clazz) && method.equals(okey.method);
 		}
@@ -237,7 +241,7 @@ public class MonitorCommand extends Command {
 				registJob(info.getChannel(), result.getId());
 				
 				// º§ªÓ»ŒŒÒ
-				Probes.activeJob(result.getId());
+				activeJob(result.getId());
 				
 				final StringBuilder message = new StringBuilder();
 				message.append(GaStringUtils.LINE);

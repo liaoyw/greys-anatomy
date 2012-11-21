@@ -10,7 +10,6 @@ import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -187,7 +186,7 @@ public class GaReflectUtils {
 	 * @return
 	 */
 	public static Set<Field> getFileds(Class<?> clazz) {
-		final Set<Field> fields = new HashSet<Field>();
+		final Set<Field> fields = new LinkedHashSet<Field>();
 		final Class<?> parentClazz = clazz.getSuperclass();
 		if( null != parentClazz ) {
 			fields.addAll(getFileds(parentClazz));

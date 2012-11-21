@@ -2,6 +2,7 @@ package com.googlecode.greysanatomy.console.command;
 
 import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
 import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.registJob;
+import static com.googlecode.greysanatomy.probe.ProbeJobs.activeJob;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,7 +24,6 @@ import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
-import com.googlecode.greysanatomy.probe.Probes;
 import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**
@@ -179,7 +179,7 @@ public class JavaScriptCommand extends Command {
 				registJob(info.getChannel(), result.getId());
 				
 				// º§ªÓ»ŒŒÒ
-				Probes.activeJob(result.getId());
+				activeJob(result.getId());
 				
 				final StringBuilder message = new StringBuilder();
 				message.append(GaStringUtils.LINE);

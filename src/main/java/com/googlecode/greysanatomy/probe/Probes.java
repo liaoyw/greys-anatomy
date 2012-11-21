@@ -1,14 +1,11 @@
 package com.googlecode.greysanatomy.probe;
 
+import static com.googlecode.greysanatomy.probe.ProbeJobs.listProbeListeners;
 import static java.lang.String.format;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
@@ -43,104 +40,14 @@ import org.slf4j.LoggerFactory;
 public class Probes {
 
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy"); 
+	
+	private static final String jobsClass = "com.googlecode.greysanatomy.probe.ProbeJobs";
 	private static final String probesClass = "com.googlecode.greysanatomy.probe.Probes";
 	
-	/**
-	 * 序列
-	 */
-	private static final AtomicInteger idseq = new AtomicInteger();
-
-	/**
-	 * 任务
-	 * @author vlinux
-	 *
-	 */
-	private static class Job {
-		private int id;
-		private boolean isAlive;
-		private final List<ProbeListener> listeners = new ArrayList<ProbeListener>();
-	}
+	private static final Map<GetMethodData, Method> getMethodForNameCache = new HashMap<GetMethodData, Method>();
+	private static final Map<CtMethod,String> cacheForGetMethodParamTypes = new HashMap<CtMethod,String>();
+	private static final Map<String,Class<?>> cacheForGetClassForName = new HashMap<String,Class<?>>();
 	
-	private static final Map<Integer,Job> jobs = new ConcurrentHashMap<Integer, Job>();
-	
-	
-	/**
-	 * 注册侦听器
-	 * @param listener
-	 */
-	public static void register(int id, ProbeListener listener) {
-		Job job = jobs.get(id);
-		if( null != job ) {
-			job.listeners.add(listener);
-			listener.create();
-		}
-	}
-	
-	/**
-	 * 创建一个job
-	 * @return
-	 */
-	public static int createJob() {
-		final int id = idseq.incrementAndGet();
-		Job job = new Job();
-		job.id = id;
-		job.isAlive = false;
-		jobs.put(id, job);
-		return id;
-	}
-	
-	/**
-	 * 激活一个job
-	 * @param id
-	 */
-	public static void activeJob(int id) {
-		Job job = jobs.get(id);
-		if( null != job ) {
-			job.isAlive = true;
-		}
-	}
-	
-	/**
-	 * 判断job是否还可以继续工作
-	 * @param id
-	 * @return
-	 */
-	public static boolean isJobAlive(int id) {
-		Job job = jobs.get(id);
-		return null != job && job.isAlive;
-	}
-	
-	/**
-	 * 杀死一个job
-	 * @param id
-	 */
-	public static void killJob(int id) {
-		Job job = jobs.get(id);
-		if( null != job ) {
-			job.isAlive = false;
-			for(ProbeListener listener : job.listeners) {
-				try {
-					listener.destroy();
-				}catch(Throwable t) {
-					logger.warn("destroy listener failed, jobId={}", id, t);
-				}
-			}
-		}
-	}
-	
-	/**
-	 * 返回存活的jobId
-	 * @return
-	 */
-	public static List<Integer> listAliveJobIds() {
-		final List<Integer> jobIds = new ArrayList<Integer>();
-		for(Job job : jobs.values()) {
-			if( job.isAlive ) {
-				jobIds.add(job.id);
-			}
-		}
-		return jobIds;
-	}
 	
 	/**
 	 * 执行前置
@@ -151,7 +58,7 @@ public class Probes {
 	 * @param args
 	 */
 	public static void doBefore(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args) {
-		for( ProbeListener listener : jobs.get(id).listeners ) {
+		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
 				Probe p = new Probe(targetClass, targetMethod, targetThis, args, false);
 				listener.onBefore(p);
@@ -171,7 +78,7 @@ public class Probes {
 	 * @param returnObj
 	 */
 	public static void doSuccess(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args, Object returnObj) {
-		for( ProbeListener listener : jobs.get(id).listeners ) {
+		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
 				Probe p = new Probe(targetClass, targetMethod, targetThis, args, false);
 				p.setReturnObj(returnObj);
@@ -193,7 +100,7 @@ public class Probes {
 	 * @param throwException
 	 */
 	public static void doException(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args, Throwable throwException) {
-		for( ProbeListener listener : jobs.get(id).listeners ) {
+		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
 				Probe p = new Probe(targetClass, targetMethod, targetThis, args, false);
 				p.setThrowException(throwException);
@@ -216,7 +123,7 @@ public class Probes {
 	 * @param throwException
 	 */
 	public static void doFinish(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args, Object returnObj, Throwable throwException) {
-		for( ProbeListener listener : jobs.get(id).listeners ) {
+		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
 				Probe p = new Probe(targetClass, targetMethod, targetThis, args, true);
 				p.setThrowException(throwException);
@@ -228,8 +135,6 @@ public class Probes {
 		}
 	}
 	
-	
-	private static final Map<String,Class<?>> cacheForGetClassForName = new HashMap<String,Class<?>>();
 	
 	/**
 	 * 获取类信息
@@ -303,8 +208,6 @@ public class Probes {
 		}
 	}
 	
-	private static final Map<GetMethodData, Method> getMethodForNameCache = new HashMap<GetMethodData, Method>();
-	
 	public static Method getMethodForName(String className, String methodName, Class<?>... paramTypes) throws ClassNotFoundException, SecurityException, NoSuchMethodException {
 		final GetMethodData gmd = new GetMethodData(className, methodName, paramTypes);
 		if( getMethodForNameCache.containsKey(gmd) ) {
@@ -316,51 +219,6 @@ public class Probes {
 		return method;
 	}
 	
-	/**
-	 * 埋点探测器
-	 * @param id
-	 * @param loader
-	 * @param cc
-	 * @param cm
-	 * @throws CannotCompileException
-	 * @throws NotFoundException
-	 * @throws ClassNotFoundException 
-	 */
-	public static void mine(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
-		
-		// 抽象方法过滤掉
-		if( Modifier.isAbstract(cm.getModifiers()) ) {
-			return;
-		}
-		
-		if( Modifier.isStatic(cm.getModifiers()) ) {
-			mineForStatic(id,loader, cc,cm);
-		} else {
-			mineForInstance(id,loader, cc,cm);
-		}
-	}
-	
-	/**
-	 * 给静态方法埋入探测器
-	 * @param id
-	 * @param loader
-	 * @param cc
-	 * @param cm
-	 * @throws CannotCompileException
-	 * @throws NotFoundException
-	 * @throws ClassNotFoundException 
-	 */
-	private static void mineForStatic(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
-		final String targetClass = format("%s.getClassForName(\"%s\")", probesClass, cc.getName());
-//		final String targetMethod = format("%s.getClassForName(\"%s\").getDeclaredMethod(\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
-		final String targetMethod = format("%s.getMethodForName(\"%s\",\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
-		cm.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,null,$args);}", probesClass, id, probesClass, id, targetClass, targetMethod));
-		cm.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,null,$args,$e);throw $e;}", probesClass, id, probesClass, id, targetClass, targetMethod), ClassPool.getDefault().get("java.lang.Throwable"));
-		cm.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,null,$args,($w)$_);}", probesClass, id, probesClass, id, targetClass, targetMethod));
-	}
-	
-	private static final Map<CtMethod,String> cacheForGetMethodParamTypes = new HashMap<CtMethod,String>();
-
 	/**
 	 * 获取CtMethod所封装的参数信息
 	 * @param cm
@@ -413,6 +271,48 @@ public class Probes {
 	}
 	
 	/**
+	 * 埋点探测器
+	 * @param id
+	 * @param loader
+	 * @param cc
+	 * @param cm
+	 * @throws CannotCompileException
+	 * @throws NotFoundException
+	 * @throws ClassNotFoundException 
+	 */
+	public static void mine(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
+		
+		// 抽象方法过滤掉
+		if( Modifier.isAbstract(cm.getModifiers()) ) {
+			return;
+		}
+		
+		if( Modifier.isStatic(cm.getModifiers()) ) {
+			mineForStatic(id,loader, cc,cm);
+		} else {
+			mineForInstance(id,loader, cc,cm);
+		}
+	}
+	
+	/**
+	 * 给静态方法埋入探测器
+	 * @param id
+	 * @param loader
+	 * @param cc
+	 * @param cm
+	 * @throws CannotCompileException
+	 * @throws NotFoundException
+	 * @throws ClassNotFoundException 
+	 */
+	private static void mineForStatic(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
+		final String targetClass = format("%s.getClassForName(\"%s\")", probesClass, cc.getName());
+		final String targetMethod = format("%s.getMethodForName(\"%s\",\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
+		cm.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,null,$args);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
+		cm.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,null,$args,$e);throw $e;}", jobsClass, id, probesClass, id, targetClass, targetMethod), ClassPool.getDefault().get("java.lang.Throwable"));
+		cm.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,null,$args,($w)$_);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
+	}
+	
+	/**
 	 * 给对象方法埋入探测器
 	 * @param id
 	 * @param loader
@@ -424,11 +324,10 @@ public class Probes {
 	 */
 	private static void mineForInstance(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
 		final String targetClass = format("%s.getClassForName(\"%s\")", probesClass, cc.getName());
-//		final String targetMethod = format("%s.getClassForName(\"%s\").getDeclaredMethod(\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
 		final String targetMethod = format("%s.getMethodForName(\"%s\",\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
-		cm.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,this,$args);}", probesClass, id, probesClass, id, targetClass, targetMethod));
-		cm.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,this,$args,$e);throw $e;}", probesClass, id, probesClass, id, targetClass, targetMethod), ClassPool.getDefault().get("java.lang.Throwable"));
-		cm.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,this,$args,($w)$_);}", probesClass, id, probesClass, id, targetClass, targetMethod));
+		cm.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,this,$args);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
+		cm.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,this,$args,$e);throw $e;}", jobsClass, id, probesClass, id, targetClass, targetMethod), ClassPool.getDefault().get("java.lang.Throwable"));
+		cm.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,this,$args,($w)$_);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
 	}
 	
 }

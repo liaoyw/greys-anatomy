@@ -1,5 +1,6 @@
 package com.googlecode.greysanatomy.probe;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
 /**
@@ -10,10 +11,135 @@ import java.lang.reflect.Method;
  */
 public class Probe {
 
-	private final Class<?> targetClass; // 目标类
-	private final Method targetMethod; 	// 目标方法
+	/**
+	 * 探测目标
+	 * @author vlinux
+	 *
+	 */
+	public static class Target {
+		
+		/*
+		 * 探测目标类
+		 */
+		private final Class<?> targetClass;
+		
+		/*
+		 * 探测目标行为(method/constructor)
+		 */
+		private final TargetBehavior targetBehavior;
+		
+		/*
+		 * 探测目标实例
+		 */
+		private final Object targetThis;
+		
+		public Target(Class<?> targetClass, TargetBehavior targetBehavior, Object targetThis) {
+			this.targetClass = targetClass;
+			this.targetBehavior = targetBehavior;
+			this.targetThis = targetThis;
+		}
+
+		/**
+		 * 获取探测目标类
+		 * @return
+		 */
+		public Class<?> getTargetClass() {
+			return targetClass;
+		}
+
+		/**
+		 * 获取探测目标行为(method/constructor)
+		 * @return
+		 */
+		public TargetBehavior getTargetBehavior() {
+			return targetBehavior;
+		}
+
+		/**
+		 * 获取探测目标实例
+		 * @return
+		 */
+		public Object getTargetThis() {
+			return targetThis;
+		}
+		
+	}
+	
+	/**
+	 * 探测目标行为(method/constructur)
+	 * @author vlinux
+	 *
+	 */
+	public static interface TargetBehavior {
+
+		/**
+		 * 获取行为的名称
+		 * @return
+		 */
+		String getName();
+		
+	}
+	
+	/**
+	 * 探测行为：构造函数探测
+	 * @author vlinux
+	 *
+	 */
+	public static class TargetConstructor implements TargetBehavior {
+
+		private final Constructor<?> constructor;
+		
+		public TargetConstructor(Constructor<?> constructor) {
+			this.constructor = constructor;
+		}
+		
+		@Override
+		public String getName() {
+			return "<init>";
+		}
+
+		/**
+		 * 获取构造函数
+		 * @return
+		 */
+		public Constructor<?> getConstructor() {
+			return constructor;
+		}
+		
+	}
+	
+	/**
+	 * 探测行为：方法探测
+	 * @author vlinux
+	 *
+	 */
+	public static class TargetMethod implements TargetBehavior {
+
+		private final Method method;
+		
+		public TargetMethod(Method method) {
+			this.method = method;
+		}
+
+		@Override
+		public String getName() {
+			return method.getName();
+		}
+
+		/**
+		 * 获取方法体
+		 * @return
+		 */
+		public Method getMethod() {
+			return method;
+		}
+		
+	}
+	
+	
+
+	private final Target target;		// 探测目标
 	private final Object[] parameters; 	// 调用参数
-	private final Object targetThis; 	// 目标实例，如果是代理的静态类，则此值为null
 	private final boolean isFinished;	// 是否到doFinish方法
 	
 	private Object returnObj; 			// 返回值，如果目标方法以抛异常的形式结束，则此值为null
@@ -21,16 +147,12 @@ public class Probe {
 
 	/**
 	 * 探测器构造函数
-	 * @param targetClass
-	 * @param targetMethod
-	 * @param targetThis
+	 * @param target
 	 * @param parameters
 	 * @param isFinished
 	 */
-	public Probe(Class<?> targetClass, Method targetMethod, Object targetThis, Object[] parameters, boolean isFinished) {
-		this.targetClass = targetClass;
-		this.targetMethod = targetMethod;
-		this.targetThis = targetThis;
+	public Probe(Target target, Object[] parameters, boolean isFinished) {
+		this.target = target;
 		this.parameters = parameters;
 		this.isFinished = isFinished;
 	}
@@ -59,8 +181,8 @@ public class Probe {
 		return isFinished;
 	}
 	
-	public Object getTargetThis() {
-		return targetThis;
+	public Target getTarget() {
+		return target;
 	}
 
 	public Object getReturnObj() {
@@ -77,14 +199,6 @@ public class Probe {
 
 	public void setThrowException(Throwable throwException) {
 		this.throwException = throwException;
-	}
-
-	public Class<?> getTargetClass() {
-		return targetClass;
-	}
-
-	public Method getTargetMethod() {
-		return targetMethod;
 	}
 
 	public Object[] getParameters() {

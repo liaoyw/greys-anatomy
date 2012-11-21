@@ -185,7 +185,7 @@ public class JavaScriptCommand extends Command {
 				message.append(GaStringUtils.LINE);
 				message.append(String.format("done. probe:c-Cnt=%s,m-Cnt=%s\n", 
 						result.getModifiedClasses().size(),
-						result.getModifiedMethods().size()));
+						result.getModifiedBehaviors().size()));
 				sender.send(false, message.toString());
 			}
 			

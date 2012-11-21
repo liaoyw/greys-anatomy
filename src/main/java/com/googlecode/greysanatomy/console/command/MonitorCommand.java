@@ -20,6 +20,8 @@ import com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.Transf
 import com.googlecode.greysanatomy.console.command.annotation.Arg;
 import com.googlecode.greysanatomy.console.command.annotation.Cmd;
 import com.googlecode.greysanatomy.probe.Probe;
+import com.googlecode.greysanatomy.probe.Probe.TargetConstructor;
+import com.googlecode.greysanatomy.probe.Probe.TargetMethod;
 import com.googlecode.greysanatomy.probe.ProbeListenerAdapter;
 import com.googlecode.greysanatomy.util.GaStringUtils;
 
@@ -146,13 +148,22 @@ public class MonitorCommand extends Command {
 					
 					@Override
 					public void onBefore(Probe p) {
+						// 不监控构造函数
+						if( p.getTarget().getTargetBehavior() instanceof TargetConstructor ) {
+							return;
+						}
 						beginTimestamp.set(System.currentTimeMillis());
 					}
 
 					@Override
 					public void onFinish(Probe p) {
+						// 不监控构造函数
+						if( p.getTarget().getTargetBehavior() instanceof TargetConstructor ) {
+							return;
+						}
 						final long cost = System.currentTimeMillis() - beginTimestamp.get();
-						final Key key = new Key(p.getTargetClass(),p.getTargetMethod());
+						final TargetMethod tm = (TargetMethod)p.getTarget().getTargetBehavior();
+						final Key key = new Key(p.getTarget().getTargetClass(), tm.getMethod());
 						
 						while(true) {
 							AtomicReference<Data> value = monitorDatas.get(key);
@@ -247,7 +258,7 @@ public class MonitorCommand extends Command {
 				message.append(GaStringUtils.LINE);
 				message.append(String.format("done. probe:c-Cnt=%s,m-Cnt=%s\n", 
 						result.getModifiedClasses().size(),
-						result.getModifiedMethods().size()));
+						result.getModifiedBehaviors().size()));
 				sender.send(false, message.toString());
 			}
 			

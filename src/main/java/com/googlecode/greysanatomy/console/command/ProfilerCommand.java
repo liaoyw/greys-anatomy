@@ -89,7 +89,7 @@ public class ProfilerCommand extends Command {
 					
 					private boolean isEntered(Probe p) {
 						return isEntered.get()
-								|| (p.getTargetClass().getName().matches(probeClassRegex) && p.getTargetMethod().getName().matches(probeMethodRegex));
+								|| (p.getTarget().getTargetClass().getName().matches(probeClassRegex) && p.getTarget().getTargetBehavior().getName().matches(probeMethodRegex));
 					}
 					
 				});
@@ -104,7 +104,7 @@ public class ProfilerCommand extends Command {
 				message.append(GaStringUtils.LINE);
 				message.append(String.format("done. probe:c-Cnt=%s,m-Cnt=%s\n", 
 						result.getModifiedClasses().size(),
-						result.getModifiedMethods().size()));
+						result.getModifiedBehaviors().size()));
 				sender.send(false, message.toString());
 			}
 			

@@ -15,8 +15,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.ByteArrayClassPath;
 import javassist.ClassPool;
+import javassist.CtBehavior;
 import javassist.CtClass;
-import javassist.CtMethod;
 import javassist.LoaderClassPath;
 
 import org.slf4j.Logger;
@@ -33,7 +33,7 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 	private final String perfClzRegex;
 	private final String perfMthRegex;
 	private final int id;
-	private final List<CtMethod> modifiedMethods;
+	private final List<CtBehavior> modifiedBehaviors;
 
 	/*
 	 * 对之前做的类进行一个缓存
@@ -42,11 +42,12 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 	
 	private GreysAnatomyClassFileTransformer(
 			final String perfClzRegex,
-			final String perfMthRegex, final ProbeListener listener, final List<CtMethod> modifiedMethods) {
+			final String perfMthRegex, 
+			final ProbeListener listener, 
+			final List<CtBehavior> modifiedBehaviors) {
 		this.perfClzRegex = perfClzRegex;
 		this.perfMthRegex = perfMthRegex;
-		this.modifiedMethods = modifiedMethods;
-		
+		this.modifiedBehaviors = modifiedBehaviors;
 		register(id = createJob(), listener);
 	}
 
@@ -74,14 +75,17 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			try {
 				cc = cp.getCtClass(className);
 				cc.defrost();
-				final CtMethod[] cms = cc.getDeclaredMethods();
-				for( int index=0; index<cms.length; index++ ) {
-					CtMethod cm = cms[index];
-					if( cm.getName().matches(perfMthRegex) ) {
-						modifiedMethods.add(cm);
-						Probes.mine(id, loader, cc, cm);
+				
+				final CtBehavior[] cbs = cc.getDeclaredBehaviors();
+				if( null != cbs ) {
+					for( CtBehavior cb : cbs ) {
+						if( cb.getMethodInfo().getName().matches(perfMthRegex) ) {
+							modifiedBehaviors.add(cb);
+							Probes.mine(id, loader, cc, cb);
+						}
 					}
-				}//for
+				}
+				
 				datas = cc.toBytecode();
 			} catch (Exception e) {
 				logger.warn("transform {} failed!", className, e);
@@ -108,20 +112,20 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 		
 		private final int id;
 		private final List<Class<?>> modifiedClasses;
-		private final List<CtMethod> modifiedMethods;
+		private final List<CtBehavior> modifiedBehaviors;
 		
-		private TransformResult(int id, final List<Class<?>> modifiedClasses, final List<CtMethod> modifiedMethods) {
+		private TransformResult(int id, final List<Class<?>> modifiedClasses, final List<CtBehavior> modifiedBehaviors) {
 			this.id = id;
 			this.modifiedClasses = new ArrayList<Class<?>>(modifiedClasses);
-			this.modifiedMethods = new ArrayList<CtMethod>(modifiedMethods);
+			this.modifiedBehaviors = new ArrayList<CtBehavior>(modifiedBehaviors);
 		}
 
 		public List<Class<?>> getModifiedClasses() {
 			return modifiedClasses;
 		}
 		
-		public List<CtMethod> getModifiedMethods() {
-			return modifiedMethods;
+		public List<CtBehavior> getModifiedBehaviors() {
+			return modifiedBehaviors;
 		}
 
 		public int getId() {
@@ -144,8 +148,8 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			final String perfMthRegex, 
 			final ProbeListener listener) throws UnmodifiableClassException {
 		
-		final List<CtMethod> modifiedMethods = new ArrayList<CtMethod>();
-		GreysAnatomyClassFileTransformer jcft = new GreysAnatomyClassFileTransformer(perfClzRegex, perfMthRegex, listener, modifiedMethods);
+		final List<CtBehavior> modifiedBehaviors = new ArrayList<CtBehavior>();
+		GreysAnatomyClassFileTransformer jcft = new GreysAnatomyClassFileTransformer(perfClzRegex, perfMthRegex, listener, modifiedBehaviors);
 		instrumentation.addTransformer(jcft,true);
 		final List<Class<?>> modifiedClasses = new ArrayList<Class<?>>();
 		for( Class<?> clazz : instrumentation.getAllLoadedClasses() ) {
@@ -161,7 +165,7 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			instrumentation.removeTransformer(jcft);
 		}
 		
-		return new TransformResult(jcft.id, modifiedClasses, modifiedMethods);
+		return new TransformResult(jcft.id, modifiedClasses, modifiedBehaviors);
 		
 	}
 	

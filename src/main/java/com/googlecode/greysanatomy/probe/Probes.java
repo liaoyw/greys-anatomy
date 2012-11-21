@@ -2,20 +2,29 @@ package com.googlecode.greysanatomy.probe;
 
 import static com.googlecode.greysanatomy.probe.ProbeJobs.listProbeListeners;
 import static java.lang.String.format;
+import static javassist.Modifier.isAbstract;
+import static javassist.Modifier.isInterface;
+import static javassist.Modifier.isStatic;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javassist.CannotCompileException;
 import javassist.ClassPool;
+import javassist.CtBehavior;
 import javassist.CtClass;
-import javassist.CtMethod;
-import javassist.Modifier;
 import javassist.NotFoundException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.googlecode.greysanatomy.probe.Probe.Target;
+import com.googlecode.greysanatomy.probe.Probe.TargetBehavior;
+import com.googlecode.greysanatomy.probe.Probe.TargetConstructor;
+import com.googlecode.greysanatomy.probe.Probe.TargetMethod;
+import com.googlecode.greysanatomy.util.GaCheckUtils;
 
 /**
  * 探测点触发者<br/>
@@ -44,23 +53,50 @@ public class Probes {
 	private static final String jobsClass = "com.googlecode.greysanatomy.probe.ProbeJobs";
 	private static final String probesClass = "com.googlecode.greysanatomy.probe.Probes";
 	
-	private static final Map<GetMethodData, Method> getMethodForNameCache = new HashMap<GetMethodData, Method>();
-	private static final Map<CtMethod,String> cacheForGetMethodParamTypes = new HashMap<CtMethod,String>();
-	private static final Map<String,Class<?>> cacheForGetClassForName = new HashMap<String,Class<?>>();
+	private static final Map<String,Class<?>> cacheForGetClassByName = new ConcurrentHashMap<String,Class<?>>();
+	private static final Map<GetBehaviorKey, Method> cacheForGetMethodByName = new ConcurrentHashMap<GetBehaviorKey, Method>();
+	private static final Map<GetBehaviorKey, Constructor<?>> cacheForGetConstructorByParamTypes = new ConcurrentHashMap<GetBehaviorKey, Constructor<?>>();
 	
+	
+	/**
+	 * 根据传入的参数决定最终采用Behaveior
+	 * @param targetConstructor
+	 * @param targetMethod
+	 * @return
+	 */
+	private static TargetBehavior newTargetBehavior(Constructor<?> targetConstructor, Method targetMethod) {
+		if( null != targetConstructor ) {
+			return new TargetConstructor(targetConstructor);
+		} else {
+			return new TargetMethod(targetMethod);
+		}
+	}
+	
+	/**
+	 * 构造Target
+	 * @param targetClass
+	 * @param targetConstructor
+	 * @param targetMethod
+	 * @param targetThis
+	 * @return
+	 */
+	private static Target newTarget(Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis) {
+		return new Target(targetClass, newTargetBehavior(targetConstructor, targetMethod), targetThis);
+	}
 	
 	/**
 	 * 执行前置
 	 * @param id
 	 * @param targetClass
+	 * @param targetConstructor
 	 * @param targetMethod
 	 * @param targetThis
 	 * @param args
 	 */
-	public static void doBefore(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args) {
+	public static void doBefore(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args) {
 		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
-				Probe p = new Probe(targetClass, targetMethod, targetThis, args, false);
+				Probe p = new Probe(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, false);
 				listener.onBefore(p);
 			}catch(Throwable t) {
 				logger.warn("error at doBefore", t);
@@ -72,60 +108,63 @@ public class Probes {
 	 * 执行成功
 	 * @param id
 	 * @param targetClass
+	 * @param targetConstructor
 	 * @param targetMethod
 	 * @param targetThis
 	 * @param args
 	 * @param returnObj
 	 */
-	public static void doSuccess(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args, Object returnObj) {
+	public static void doSuccess(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Object returnObj) {
 		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
-				Probe p = new Probe(targetClass, targetMethod, targetThis, args, false);
+				Probe p = new Probe(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, false);
 				p.setReturnObj(returnObj);
 				listener.onSuccess(p);
 			}catch(Throwable t) {
 				logger.warn("error at onSuccess", t);
 			}
 		}
-		doFinish(id, targetClass, targetMethod, targetThis, args, returnObj, null);
+		doFinish(id, targetClass, targetConstructor, targetMethod, targetThis, args, returnObj, null);
 	}
 	
 	/**
 	 * 执行异常
 	 * @param id
 	 * @param targetClass
+	 * @param targetConstructor
 	 * @param targetMethod
 	 * @param targetThis
 	 * @param args
 	 * @param throwException
 	 */
-	public static void doException(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args, Throwable throwException) {
+	public static void doException(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Throwable throwException) {
 		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
-				Probe p = new Probe(targetClass, targetMethod, targetThis, args, false);
+				Probe p = new Probe(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, false);
 				p.setThrowException(throwException);
 				listener.onException(p);
 			}catch(Throwable t) {
 				logger.warn("error at onException", t);
 			}
 		}
-		doFinish(id, targetClass, targetMethod, targetThis, args, null, throwException);
+		doFinish(id, targetClass, targetConstructor, targetMethod, targetThis, args, null, throwException);
 	}
 	
 	/**
 	 * 执行完成
 	 * @param id
 	 * @param targetClass
+	 * @Param targetConstructor
 	 * @param targetMethod
 	 * @param targetThis
 	 * @param args
 	 * @param returnObj
 	 * @param throwException
 	 */
-	public static void doFinish(int id, Class<?> targetClass, Method targetMethod, Object targetThis, Object[] args, Object returnObj, Throwable throwException) {
+	public static void doFinish(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Object returnObj, Throwable throwException) {
 		for( ProbeListener listener : listProbeListeners(id) ) {
 			try {
-				Probe p = new Probe(targetClass, targetMethod, targetThis, args, true);
+				Probe p = new Probe(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, true);
 				p.setThrowException(throwException);
 				p.setReturnObj(returnObj);
 				listener.onFinish(p);
@@ -142,9 +181,9 @@ public class Probes {
 	 * @return
 	 * @throws ClassNotFoundException
 	 */
-	public static Class<?> getClassForName(String name) throws ClassNotFoundException {
-		if( cacheForGetClassForName.containsKey(name) ) {
-			return cacheForGetClassForName.get(name);
+	public static Class<?> getClassByName(String name) throws ClassNotFoundException {
+		if( cacheForGetClassByName.containsKey(name) ) {
+			return cacheForGetClassByName.get(name);
 		}
 		final ClassLoader loader = Thread.currentThread().getContextClassLoader();
 		final Class<?> clazz;
@@ -153,23 +192,28 @@ public class Probes {
 		} else {
 			clazz = java.lang.Class.forName(name);
 		}//if
-		cacheForGetClassForName.put(name, clazz);
+		cacheForGetClassByName.put(name, clazz);
 		return clazz;
 	}
 	
-	
-	private static class GetMethodData {
+	/**
+	 * 获取行为的缓存Key
+	 * @author vlinux
+	 *
+	 */
+	private static class GetBehaviorKey {
+		
 		private final String className;
-		private final String methodName;
+		private final String behaviorName;
 		private final Class<?>[] paramTypes;
-		private GetMethodData(String className, String methodName,
-				Class<?>[] paramTypes) {
+		
+		private GetBehaviorKey(String className, String behaviorName, Class<?>[] paramTypes) {
 			this.className = className;
-			this.methodName = methodName;
+			this.behaviorName = behaviorName;
 			this.paramTypes = paramTypes;
 		}
 		public int hashCode() {
-			int hc = className.hashCode() + methodName.hashCode();
+			int hc = className.hashCode() + behaviorName.hashCode();
 			if( null != paramTypes ) {
 				for( Class<?> c : paramTypes ) {
 					hc += c.hashCode();
@@ -179,14 +223,14 @@ public class Probes {
 		}
 		public boolean equals(Object obj) {
 			if( null == obj
-					|| !(obj instanceof GetMethodData) ) {
+					|| !(obj instanceof GetBehaviorKey) ) {
 				return false;
 			}
 			
-			GetMethodData o = (GetMethodData)obj;
+			GetBehaviorKey o = (GetBehaviorKey)obj;
 			
 			if( !className.equals(o.className)
-					|| !methodName.equals(o.methodName)) {
+					|| !behaviorName.equals(o.behaviorName)) {
 				return false;
 			}
 			if( null != paramTypes ) {
@@ -208,54 +252,66 @@ public class Probes {
 		}
 	}
 	
-	public static Method getMethodForName(String className, String methodName, Class<?>... paramTypes) throws ClassNotFoundException, SecurityException, NoSuchMethodException {
-		final GetMethodData gmd = new GetMethodData(className, methodName, paramTypes);
-		if( getMethodForNameCache.containsKey(gmd) ) {
-			return getMethodForNameCache.get(gmd);
+	/**
+	 * 通过方法名和参数列表获取方法
+	 * @param className
+	 * @param methodName
+	 * @param paramTypes
+	 * @return
+	 * @throws ClassNotFoundException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 */
+	public static Method getMethodByNameAndParamTypes(String className, String methodName, Class<?>... paramTypes) throws ClassNotFoundException, SecurityException, NoSuchMethodException {
+		final GetBehaviorKey gmd = new GetBehaviorKey(className, methodName, paramTypes);
+		if( cacheForGetMethodByName.containsKey(gmd) ) {
+			return cacheForGetMethodByName.get(gmd);
 		}
-		final Class<?> clazz = getClassForName(className);
+		final Class<?> clazz = getClassByName(className);
 		Method method = clazz.getDeclaredMethod(methodName, paramTypes);
-		getMethodForNameCache.put(gmd, method);
+		cacheForGetMethodByName.put(gmd, method);
 		return method;
 	}
 	
 	/**
-	 * 获取CtMethod所封装的参数信息
-	 * @param cm
+	 * 通过参数列表获取构造函数
+	 * @param className
+	 * @param paramTypes
+	 * @return
+	 * @throws ClassNotFoundException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 */
+	public static Constructor<?> getConstructorByParamTypes(String className, Class<?>... paramTypes) throws ClassNotFoundException, SecurityException, NoSuchMethodException {
+		final GetBehaviorKey key = new GetBehaviorKey(className, "<init>", paramTypes);
+		if( cacheForGetConstructorByParamTypes.containsKey(key) ) {
+			return cacheForGetConstructorByParamTypes.get(key);
+		}
+		final Class<?> clazz = getClassByName(className);
+		final Constructor<?> constructor = clazz.getDeclaredConstructor(paramTypes);
+		cacheForGetConstructorByParamTypes.put(key, constructor);
+		return constructor;
+	}
+	
+	/**
+	 * 获取CtBehavior所封装的参数信息,字符串化,用于javassist
+	 * @param cb
 	 * @return
 	 * @throws NotFoundException
 	 */
-	private static String getMethodParamTypes(CtMethod cm) throws NotFoundException {
-		if( cacheForGetMethodParamTypes.containsKey(cm) ) {
-			return cacheForGetMethodParamTypes.get(cm);
-		}
+	private static String toJavassistStringParamTypes(CtBehavior cb) throws NotFoundException {
 		StringBuilder sb = new StringBuilder();
-		CtClass[] ccs = cm.getParameterTypes();
+		CtClass[] ccs = cb.getParameterTypes();
 		final String returnStr;
 		if( null != ccs && ccs.length > 0) {
 			for( CtClass cc : ccs ) {
 				
 				String name = cc.getName();
-				if( cc.isArray() ) {
-					sb.append(format("%s.class", name));
-				}else if( name.equals("long") ) {
-					sb.append(name+".class");
-				}else if( name.equals("int") ) {
-					sb.append(name+".class");
-				}else if( name.equals("double") ) {
-					sb.append(name+".class");
-				}else if( name.equals("float") ) {
-					sb.append(name+".class");
-				}else if( name.equals("char") ) {
-					sb.append(name+".class");
-				}else if( name.equals("byte") ) {
-					sb.append(name+".class");
-				}else if( name.equals("short") ) {
-					sb.append(name+".class");
-				}else if( name.equals("boolean") ) {
-					sb.append(name+".class");
-				}else {
-					sb.append(format("%s.getClassForName(\"%s\")", probesClass, name));
+				if( cc.isArray() 
+						|| GaCheckUtils.isIn(name, "long","int","double","float","char","byte","short","boolean") ) {
+					sb.append(name).append(".class");
+				} else {
+					sb.append(format("%s.getClassByName(\"%s\")", probesClass, name));
 				}//if
 				
 				sb.append(",");
@@ -266,8 +322,37 @@ public class Probes {
 		} else {
 			returnStr = "null";
 		}
-		cacheForGetMethodParamTypes.put(cm, returnStr);
 		return returnStr;
+	}
+	
+	/**
+	 * 是否过滤掉当前探测的目标
+	 * @param cc
+	 * @param cb
+	 * @return
+	 */
+	private static boolean isIngore(CtClass cc, CtBehavior cb) {
+		
+		final int ccMod = cc.getModifiers();
+		final int cbMod = cb.getModifiers();
+		
+		// 过滤掉接口
+		if( isInterface(ccMod) ) {
+			return true;
+		}
+				
+		// 过滤掉抽象方法
+		if( isAbstract(cbMod) ) {
+			return true;
+		}
+		
+		// 过滤掉自己，避免递归调用
+		if( cc.getName().startsWith("com.googlecode.greysanatomy.") ) {
+			return true;
+		}
+		
+		return false;
+		
 	}
 	
 	/**
@@ -280,54 +365,87 @@ public class Probes {
 	 * @throws NotFoundException
 	 * @throws ClassNotFoundException 
 	 */
-	public static void mine(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
+	public static void mine(int id, ClassLoader loader, CtClass cc, CtBehavior cb) throws CannotCompileException, NotFoundException, ClassNotFoundException {
 		
-		// 抽象方法过滤掉
-		if( Modifier.isAbstract(cm.getModifiers()) ) {
+		if( isIngore(cc, cb) ) {
 			return;
 		}
 		
-		if( Modifier.isStatic(cm.getModifiers()) ) {
-			mineForStatic(id,loader, cc,cm);
-		} else {
-			mineForInstance(id,loader, cc,cm);
+		// 目标类
+		final String javassistClass = format("(%s.getClassByName(\"%s\"))", 
+				probesClass, 
+				cc.getName());
+		
+		// 目标方法
+		final String javassistMethod = cb.getMethodInfo().isMethod() 
+				? format("%s.getMethodByNameAndParamTypes(\"%s\",\"%s\",%s)", 
+						probesClass, 
+						cc.getName(), 
+						cb.getMethodInfo().getName(), 
+						toJavassistStringParamTypes(cb))
+				: "null";
+		
+		// 目标构造函数
+		final String javassistConstructor = cb.getMethodInfo().isConstructor() 
+				? format("%s.getConstructorByParamTypes(\"%s\",%s)", 
+						probesClass, 
+						cc.getName(), 
+						toJavassistStringParamTypes(cb))
+				: "null";	
+		
+		// 目标实例,如果是静态方法，则为null
+		final String javassistThis = isStatic(cb.getModifiers()) ? "null" : "this";
+		
+		// 构造函数在这里是不能做insertBefore的,所以构造函数的before是做在doCache中
+		if( cb.getMethodInfo().isMethod() ) {
+			mineForMethod(cb, id, javassistClass, javassistConstructor, javassistMethod, javassistThis);
+		} else if( cb.getMethodInfo().isConstructor() ) {
+			mineForConstructor(cb, id, javassistClass, javassistConstructor, javassistMethod, javassistThis);
 		}
 	}
 	
 	/**
-	 * 给静态方法埋入探测器
+	 * 给构造函数埋点
+	 * @param cb
 	 * @param id
-	 * @param loader
-	 * @param cc
-	 * @param cm
+	 * @param javassistClass
+	 * @param javassistConstructor
+	 * @param javassistMethod
+	 * @param javassistThis
 	 * @throws CannotCompileException
 	 * @throws NotFoundException
-	 * @throws ClassNotFoundException 
 	 */
-	private static void mineForStatic(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
-		final String targetClass = format("%s.getClassForName(\"%s\")", probesClass, cc.getName());
-		final String targetMethod = format("%s.getMethodForName(\"%s\",\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
-		cm.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,null,$args);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
-		cm.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,null,$args,$e);throw $e;}", jobsClass, id, probesClass, id, targetClass, targetMethod), ClassPool.getDefault().get("java.lang.Throwable"));
-		cm.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,null,$args,($w)$_);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
+	private static void mineForConstructor(CtBehavior cb, int id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
+		cb.addCatch(format("{if(%s.isJobAlive(%s)){%s.doBefore(%s,%s,%s,%s,%s,$args);%s.doException(%s,%s,%s,%s,%s,$args,$e);}throw $e;}", 
+				jobsClass, id, 
+				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis, 
+				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis), 
+			ClassPool.getDefault().get("java.lang.Throwable"));
+		cb.insertAfter(format("{if(%s.isJobAlive(%s)){%s.doBefore(%s,%s,%s,%s,%s,$args);%s.doSuccess(%s,%s,%s,%s,%s,$args,($w)$_);}}", 
+				jobsClass, id, 
+				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis,
+				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
 	}
 	
 	/**
-	 * 给对象方法埋入探测器
+	 * 给方法体埋点
+	 * @param cb
 	 * @param id
-	 * @param loader
-	 * @param cc
-	 * @param cm
+	 * @param javassistClass
+	 * @param javassistConstructor
+	 * @param javassistMethod
+	 * @param javassistThis
 	 * @throws CannotCompileException
 	 * @throws NotFoundException
-	 * @throws ClassNotFoundException 
 	 */
-	private static void mineForInstance(int id, ClassLoader loader, CtClass cc, CtMethod cm) throws CannotCompileException, NotFoundException, ClassNotFoundException {
-		final String targetClass = format("%s.getClassForName(\"%s\")", probesClass, cc.getName());
-		final String targetMethod = format("%s.getMethodForName(\"%s\",\"%s\",%s)", probesClass, cc.getName(), cm.getName(), getMethodParamTypes(cm));
-		cm.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,this,$args);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
-		cm.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,this,$args,$e);throw $e;}", jobsClass, id, probesClass, id, targetClass, targetMethod), ClassPool.getDefault().get("java.lang.Throwable"));
-		cm.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,this,$args,($w)$_);}", jobsClass, id, probesClass, id, targetClass, targetMethod));
+	private static void mineForMethod(CtBehavior cb, int id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
+		cb.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,%s,%s,$args);}", 
+				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
+		cb.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,%s,%s,$args,$e);throw $e;}", 
+				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis), 
+			ClassPool.getDefault().get("java.lang.Throwable"));
+		cb.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,%s,%s,$args,($w)$_);}", 
+				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
 	}
 	
 }

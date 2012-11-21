@@ -26,6 +26,28 @@ public class GreysAnatomyMain {
 	public static final String JARFILE = GreysAnatomyMain.class.getProtectionDomain().getCodeSource().getLocation().getFile();
 	
 	public GreysAnatomyMain(String[] args) throws AttachNotSupportedException, IOException, AgentLoadException, AgentInitializationException, ConsoleException {
+		
+		// 解析配置文件
+		Configer configer = parsetConfiger(args);
+		
+		// 加载agent
+		attachAgent(configer);
+		
+		// 激活控制台
+		activeConsoleClient(configer);
+		
+		logger.info("attach done! pid={}; port={}; JarFile={}", new Object[]{
+				configer.getJavaPid(), 
+				configer.getConsolePort(), 
+				JARFILE});
+	}
+	
+	/**
+	 * 解析configer
+	 * @param args
+	 * @return
+	 */
+	private Configer parsetConfiger(String[] args) {
 		final OptionParser parser = new OptionParser();
 		parser.accepts("pid").withRequiredArg().ofType(int.class).required();
 		parser.accepts("port").withOptionalArg().ofType(int.class);
@@ -36,7 +58,18 @@ public class GreysAnatomyMain {
 			configer.setConsolePort((Integer)os.valueOf("port"));
 		}
 		configer.setJavaPid((Integer)os.valueOf("pid"));
-		
+		return configer;
+	}
+	
+	/**
+	 * 加载Agent
+	 * @param configer
+	 * @throws AttachNotSupportedException
+	 * @throws IOException
+	 * @throws AgentLoadException
+	 * @throws AgentInitializationException
+	 */
+	private void attachAgent(Configer configer) throws AttachNotSupportedException, IOException, AgentLoadException, AgentInitializationException {
 		VirtualMachineDescriptor attachVmd = null;
 		for( VirtualMachineDescriptor vmd : VirtualMachine.list() ) {
 			if( vmd.id().equals(""+configer.getJavaPid()) ) {
@@ -58,13 +91,19 @@ public class GreysAnatomyMain {
 				vm.detach();
 			}
 		}
-		
-		ConsoleClient.getInstance(configer);
-		logger.info("attach done! pid={}; port={}; JarFile={}", new Object[]{
-				configer.getJavaPid(), 
-				configer.getConsolePort(), 
-				JARFILE});
 	}
+	
+	/**
+	 * 激活控制台客户端
+	 * @param configer
+	 * @throws ConsoleException
+	 * @throws IOException
+	 */
+	private void activeConsoleClient(Configer configer) throws ConsoleException, IOException {
+		ConsoleClient.getInstance(configer);
+	}
+	
+	
 	
 	public static void main(String[] args)  {
 		

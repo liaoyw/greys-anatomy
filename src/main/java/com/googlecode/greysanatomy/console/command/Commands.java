@@ -19,6 +19,7 @@ import jline.console.completer.NullCompleter;
 import jline.console.completer.StringsCompleter;
 import joptsimple.OptionParser;
 import joptsimple.OptionSet;
+import joptsimple.OptionSpecBuilder;
 
 import com.googlecode.greysanatomy.console.FileValueConverter;
 import com.googlecode.greysanatomy.console.InputCompleter;
@@ -73,11 +74,17 @@ public class Commands {
 		final OptionParser parser = new OptionParser();
 		for( Field field : getArgFields(clazz) ) {
 			final Arg arg = field.getAnnotation(Arg.class);
-			parser.accepts(arg.name(), arg.description())
-				.withRequiredArg()
-				.withValuesConvertedBy(new FileValueConverter())
-				.ofType(field.getType())
-				.required();
+			final OptionSpecBuilder osb = parser.accepts(arg.name(), arg.description());
+			if( arg.isRequired() ) {
+				osb.withRequiredArg()
+					.withValuesConvertedBy(new FileValueConverter())
+					.ofType(field.getType())
+					.required();
+			} else {
+				osb.withOptionalArg()
+					.withValuesConvertedBy(new FileValueConverter())
+					.ofType(field.getType());
+			}
 		}
 		return parser;
 	}

@@ -125,7 +125,8 @@ public class JavaScriptCommand extends Command {
 				final Invocable invoke = (Invocable) jsEngine;
 				final ScriptListener scriptListener;
 				try {
-					jsEngine.eval("var $f=com.googlecode.greysanatomy.util.GaReflectUtils.getFieldValueByFieldName;");
+					jsEngine.eval("var $field=com.googlecode.greysanatomy.util.GaReflectUtils.getFieldValueByFieldName;");
+					jsEngine.eval("var $jstack=com.googlecode.greysanatomy.util.GaReflectUtils.jstack;");
 					jsEngine.eval(new FileReader(scriptFile));
 					scriptListener = invoke.getInterface(ScriptListener.class);
 				} catch (FileNotFoundException e) {

@@ -7,6 +7,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.CodeSource;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer;
 
 public class GaDetailUtils {
@@ -15,7 +17,7 @@ public class GaDetailUtils {
 	private static final String STEP_TAB = "                    ";
 	private static final String STEP_FLOW_TAB = "  ";
 	private static final String FLOW_TAB = "                  ";
-	private static final String NULL = "null";
+	private static final String NULL = StringUtils.EMPTY;
 	
 	public static String detail(Class<?> clazz) {
 		
@@ -50,7 +52,7 @@ public class GaDetailUtils {
 		{
 			StringBuilder interfaceSB = new StringBuilder();
 			Class<?>[] interfaces = clazz.getInterfaces();
-			if( null == interfaces ) {
+			if( null == interfaces || interfaces.length == 0 ) {
 				interfaceSB.append(NULL);
 			} else {
 				for( Class<?> i : interfaces ) {

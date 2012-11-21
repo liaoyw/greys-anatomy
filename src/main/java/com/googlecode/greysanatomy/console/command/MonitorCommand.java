@@ -301,7 +301,7 @@ public class MonitorCommand extends Command {
 		
 		for( int c=0; c<8; c++ ) {
 			titleSB.append("+");
-			GaStringUtils.leftFill(titleSB, colMaxWidths[c]+2, "-");
+			GaStringUtils.rightFill(titleSB, colMaxWidths[c]+2, "-");
 		}
 		titleSB.append("+").append("\n");
 		
@@ -315,7 +315,7 @@ public class MonitorCommand extends Command {
 			for( int c=0; c<8; c++ ) {
 				lineSB.append("|");
 				int diff = colMaxWidths[c] - cols[c].length()+1;
-				GaStringUtils.leftFill(lineSB, diff, " ");
+				GaStringUtils.rightFill(lineSB, diff, " ");
 				lineSB.append(cols[c]).append(" ");
 			}
 			

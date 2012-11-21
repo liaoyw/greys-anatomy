@@ -302,4 +302,24 @@ public class GaReflectUtils {
 		return filePath.replaceAll("/", ".");
 	}
 	
+	/**
+	 * Êä³öµ÷ÓÃ¶ÑÕ»
+	 * @return
+	 */
+	public static String jstack() {
+
+		int i = 0;
+		final StringBuilder jstackSB = new StringBuilder();
+		for( StackTraceElement ste : Thread.currentThread().getStackTrace() ) {
+			GaStringUtils.rightFill(jstackSB, i*2, " ");
+			if( 0 != i++ ) {
+				jstackSB.append("`-- ");
+			}
+			jstackSB.append(ste.toString()).append("\n");
+		}
+		
+		return jstackSB.toString();
+		
+	}
+	
 }

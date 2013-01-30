@@ -1,6 +1,5 @@
 package com.googlecode.greysanatomy.agent;
 
-import static com.googlecode.greysanatomy.probe.ProbeJobs.createJob;
 import static com.googlecode.greysanatomy.probe.ProbeJobs.register;
 
 import java.lang.instrument.ClassFileTransformer;
@@ -22,6 +21,7 @@ import javassist.LoaderClassPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.googlecode.greysanatomy.console.command.Command.Info;
 import com.googlecode.greysanatomy.probe.JobListener;
 import com.googlecode.greysanatomy.probe.Probes;
 import com.googlecode.greysanatomy.util.GaReflectUtils;
@@ -44,11 +44,13 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			final String perfClzRegex,
 			final String perfMthRegex, 
 			final JobListener listener, 
-			final List<CtBehavior> modifiedBehaviors) {
+			final List<CtBehavior> modifiedBehaviors,
+			final Info info) {
 		this.perfClzRegex = perfClzRegex;
 		this.perfMthRegex = perfMthRegex;
 		this.modifiedBehaviors = modifiedBehaviors;
-		register(id = createJob(), listener);
+		this.id = info.getJobId();
+		register(this.id, listener);
 	}
 
 	@Override
@@ -146,10 +148,11 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 	public static TransformResult transform(final Instrumentation instrumentation, 
 			final String perfClzRegex, 
 			final String perfMthRegex, 
-			final JobListener listener) throws UnmodifiableClassException {
+			final JobListener listener,
+			final Info info) throws UnmodifiableClassException {
 		
 		final List<CtBehavior> modifiedBehaviors = new ArrayList<CtBehavior>();
-		GreysAnatomyClassFileTransformer jcft = new GreysAnatomyClassFileTransformer(perfClzRegex, perfMthRegex, listener, modifiedBehaviors);
+		GreysAnatomyClassFileTransformer jcft = new GreysAnatomyClassFileTransformer(perfClzRegex, perfMthRegex, listener, modifiedBehaviors, info);
 		instrumentation.addTransformer(jcft,true);
 		final List<Class<?>> modifiedClasses = new ArrayList<Class<?>>();
 		for( Class<?> clazz : instrumentation.getAllLoadedClasses() ) {

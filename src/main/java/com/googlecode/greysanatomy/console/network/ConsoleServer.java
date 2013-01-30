@@ -1,85 +1,48 @@
 package com.googlecode.greysanatomy.console.network;
 
-import static java.util.concurrent.Executors.newCachedThreadPool;
-
 import java.lang.instrument.Instrumentation;
-import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.server.UnicastRemoteObject;
 
-import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.group.ChannelGroup;
-import org.jboss.netty.channel.group.DefaultChannelGroup;
-import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.Configer;
-import com.googlecode.greysanatomy.console.network.coder.CmdDecoder;
-import com.googlecode.greysanatomy.console.network.coder.CmdEncoder;
-import com.googlecode.greysanatomy.console.network.coder.ProtocolDecoder;
-import com.googlecode.greysanatomy.console.network.coder.ProtocolEncoder;
+import com.googlecode.greysanatomy.console.network.coder.RespResult;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqCmd;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqGetResult;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqHeart;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqKillJob;
 import com.googlecode.greysanatomy.util.GaStringUtils;
-import com.googlecode.greysanatomy.util.JvmUtils;
-import com.googlecode.greysanatomy.util.JvmUtils.ShutdownHook;
 
 /**
  * 控制台服务器
  * @author vlinux
  *
  */
-public class ConsoleServer {
+public class ConsoleServer extends UnicastRemoteObject implements ConsoleServerService{
+
+	private static final long serialVersionUID = 7625219488001802803L;
 
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
 	
-	private final ServerBootstrap bootstrap;
-	private final ChannelGroup channelGroup;
+	private final ConsoleServerHandler serverHandler;
 	
 	/**
 	 * 构造控制台服务器
 	 * @param configer
 	 * @param inst
+	 * @throws RemoteException 
+	 * @throws MalformedURLException 
 	 */
-	private ConsoleServer(Configer configer, final Instrumentation inst) {
-		this.bootstrap = new ServerBootstrap(
-			new NioServerSocketChannelFactory(
-				newCachedThreadPool(),
-				newCachedThreadPool()));
-		this.bootstrap.setOption("child.tcpNoDelay", true);
-		this.bootstrap.setOption("child.keepAlive", true);
-		this.channelGroup = new DefaultChannelGroup();
-		this.bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-
-			@Override
-			public ChannelPipeline getPipeline() throws Exception {
-				ChannelPipeline pipeline = Channels.pipeline();
-				pipeline.addLast("protocol-decoder", new ProtocolDecoder());
-				pipeline.addLast("cmd-decoder", new CmdDecoder());
-				pipeline.addLast("console-server-handler", new ConsoleServerHandler(inst, channelGroup));
-				pipeline.addLast("protocol-encoder", new ProtocolEncoder());
-				pipeline.addLast("cmd-encoder", new CmdEncoder());
-				return pipeline;
-			}
-
-		});
-		this.channelGroup.add(bootstrap.bind(new InetSocketAddress(configer.getConsolePort())));
-		
-		logger.info("ga-console-server was started at port={}", configer.getConsolePort());
-		JvmUtils.registShutdownHook("ga-console-server", new ShutdownHook(){
-
-			@Override
-			public void shutdown() throws Throwable {
-				if( null != channelGroup ) {
-					channelGroup.close().awaitUninterruptibly();
-				}
-				if( null != bootstrap ) {
-					bootstrap.releaseExternalResources();
-				}
-			}
-			
-		});
-		
+	private ConsoleServer(Configer configer, final Instrumentation inst) throws RemoteException, MalformedURLException {
+		super();
+		serverHandler = new ConsoleServerHandler(inst);
+		LocateRegistry.createRegistry(configer.getConsolePort());
+		Naming.rebind("rmi://127.0.0.1:"+configer.getConsolePort()+"/RMI_GREYS_ANATOMY", this);
 	}
 	
 	
@@ -88,13 +51,40 @@ public class ConsoleServer {
 	/**
 	 * 单例控制台服务器
 	 * @param configer
+	 * @throws MalformedURLException 
+	 * @throws RemoteException 
 	 */
-	public static synchronized ConsoleServer getInstance(Configer configer, Instrumentation inst) {
+	public static synchronized ConsoleServer getInstance(Configer configer, Instrumentation inst) throws RemoteException, MalformedURLException {
 		if( null == instance ) {
 			instance = new ConsoleServer(configer, inst);
 			logger.info(GaStringUtils.getLogo());
 		}
 		return instance;
+	}
+
+	@Override
+	public RespResult postCmd(ReqCmd cmd) throws Exception {
+		return serverHandler.postCmd(cmd);
+	}
+
+	@Override
+	public long register() throws Exception {
+		return serverHandler.register();
+	}
+
+	@Override
+	public RespResult getCmdExecuteResult(ReqGetResult req) throws Exception {
+		return serverHandler.getCmdExecuteResult(req);
+	}
+
+	@Override
+	public void killJob(ReqKillJob req) throws Exception {
+		serverHandler.killJob(req);
+	}
+
+	@Override
+	public boolean sessionHeartBeat(ReqHeart req) throws Exception {
+		return serverHandler.sessionHeartBeat(req);
 	}
 	
 }

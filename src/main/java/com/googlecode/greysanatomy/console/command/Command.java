@@ -2,8 +2,6 @@ package com.googlecode.greysanatomy.console.command;
 
 import java.lang.instrument.Instrumentation;
 
-import org.jboss.netty.channel.Channel;
-
 /**
  * 抽象命令类
  * @author vlinux
@@ -31,24 +29,31 @@ public abstract class Command {
 	/**
 	 * 命令信息
 	 * @author vlinux
+	 * @author chengtongda
 	 *
 	 */
 	public static class Info {
 		
 		private final Instrumentation inst;
-		private final Channel channel;
+		private final long sessionId;
+		private final int jobId;
 		
-		public Info(Instrumentation inst, Channel channel) {
+		public Info(Instrumentation inst, long sessionId, int jobId) {
 			this.inst = inst;
-			this.channel = channel;
+			this.sessionId = sessionId;
+			this.jobId = jobId;
 		}
 
 		public Instrumentation getInst() {
 			return inst;
 		}
 
-		public Channel getChannel() {
-			return channel;
+		public long getSessionId() {
+			return sessionId;
+		}
+
+		public int getJobId() {
+			return jobId;
 		}
 		
 	}

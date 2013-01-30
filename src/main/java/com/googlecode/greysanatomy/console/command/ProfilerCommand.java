@@ -1,7 +1,7 @@
 package com.googlecode.greysanatomy.console.command;
 
 import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
-import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.registJob;
+import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.registJob;
 import static com.googlecode.greysanatomy.probe.ProbeJobs.activeJob;
 
 import java.lang.instrument.Instrumentation;
@@ -92,10 +92,10 @@ public class ProfilerCommand extends Command {
 								|| (p.getTarget().getTargetClass().getName().matches(probeClassRegex) && p.getTarget().getTargetBehavior().getName().matches(probeMethodRegex));
 					}
 					
-				});
+				},info);
 				
 				// 注册任务
-				registJob(info.getChannel(), result.getId());
+				registJob(info.getSessionId(), result.getId());
 			
 				// 激活任务
 				activeJob(result.getId());

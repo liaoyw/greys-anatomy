@@ -1,19 +1,19 @@
 package com.googlecode.greysanatomy.console.network;
 
-import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.getJobs;
-import static com.googlecode.greysanatomy.console.network.ChannelJobsHolder.unRegistJob;
+import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.unRegistJob;
+import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.heartBeatSession;
+import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.registSession;
+import static com.googlecode.greysanatomy.probe.ProbeJobs.createJob;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.lang.instrument.Instrumentation;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
-import org.jboss.netty.channel.group.ChannelGroup;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,9 +22,11 @@ import com.googlecode.greysanatomy.console.command.Command.Action;
 import com.googlecode.greysanatomy.console.command.Command.Info;
 import com.googlecode.greysanatomy.console.command.Command.Sender;
 import com.googlecode.greysanatomy.console.command.Commands;
-import com.googlecode.greysanatomy.console.network.coder.KillJobsCmd;
-import com.googlecode.greysanatomy.console.network.coder.ReqCmd;
-import com.googlecode.greysanatomy.console.network.coder.RespCmd;
+import com.googlecode.greysanatomy.console.network.coder.RespResult;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqCmd;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqGetResult;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqHeart;
+import com.googlecode.greysanatomy.console.network.coder.req.ReqKillJob;
 import com.googlecode.greysanatomy.util.JvmUtils;
 import com.googlecode.greysanatomy.util.JvmUtils.ShutdownHook;
 
@@ -33,17 +35,15 @@ import com.googlecode.greysanatomy.util.JvmUtils.ShutdownHook;
  * @author vlinux
  *
  */
-public class ConsoleServerHandler extends SimpleChannelUpstreamHandler {
+public class ConsoleServerHandler {
 
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
 	
 	private final Instrumentation inst;
-	private final ChannelGroup channelGroup;
 	private final ExecutorService workers;
 	
-	public ConsoleServerHandler(Instrumentation inst, ChannelGroup channelGroup) {
+	public ConsoleServerHandler(Instrumentation inst) {
 		this.inst = inst;
-		this.channelGroup = channelGroup;
 		this.workers = Executors.newCachedThreadPool(new ThreadFactory() {
 
 			@Override
@@ -68,64 +68,31 @@ public class ConsoleServerHandler extends SimpleChannelUpstreamHandler {
 		
 	}
 	
-	@Override
-	public void channelConnected(ChannelHandlerContext ctx,
-			ChannelStateEvent e) throws Exception {
-		super.channelConnected(ctx, e);
-		channelGroup.add(ctx.getChannel());
-		logger.info("client:{} was connected.", ctx.getChannel().getRemoteAddress());
-	}
-
-	@Override
-	public void channelDisconnected(ChannelHandlerContext ctx,
-			ChannelStateEvent e) throws Exception {
-		super.channelDisconnected(ctx, e);
-		// 这里注销当前连接上的所有任务
-		unRegistJob(ctx.getChannel());
-		logger.info("client:{} was disconnected.", ctx.getChannel().getRemoteAddress());
-	}
-
-
-
-	@Override
-	public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
-			throws Exception {
-
-		if( null == e.getMessage()
-				|| !(e.getMessage() instanceof ReqCmd)) {
-			super.messageReceived(ctx, e);
-		}
-		
-		final Channel channel = ctx.getChannel();
-		final ReqCmd req = (ReqCmd)e.getMessage();
-		
+	public RespResult postCmd(final ReqCmd cmd) {
+		final RespResult respResult = new RespResult();
+		respResult.setSessionId(cmd.getGaSessionId());
+		final long millis = System.currentTimeMillis();
+		respResult.setJobId(createJob());
+		respResult.setJobMillis(millis);
 		workers.execute(new Runnable(){
 
 			@Override
 			public void run() {
-				
-				// 任务杀手
-				if( req instanceof KillJobsCmd ) {
-					unRegistJob(channel, getJobs(channel));
-					return;
-				}
-				
 				// 普通命令请求
-				final Info info = new Info(inst, channel);
+				final Info info = new Info(inst, respResult.getSessionId(), respResult.getJobId());
 				final Sender sender = new Sender(){
 
 					@Override
 					public void send(boolean isF, String message) {
-						write(channel, req, isF, message);
+						write(respResult.getSessionId(), respResult.getJobId(), isF, millis, message);
 					}
-					
 				};
 				
 				try {
-					final Command command = Commands.getInstance().newCommand(req.getCommand());
+					final Command command = Commands.getInstance().newCommand(cmd.getCommand());
 					// 命令不存在
 					if( null == command ) {
-						write(channel, req, true, "command not found.");
+						write(respResult.getSessionId(), respResult.getJobId(), true, millis, "command not found!");
 						return;
 					}
 					final Action action = command.getAction();
@@ -133,26 +100,113 @@ public class ConsoleServerHandler extends SimpleChannelUpstreamHandler {
 				}catch(Throwable t) {
 					// 执行命令失败
 					logger.warn("do action failed.", t);
-					write(channel, req, true, "do action failed. cause:"+t.getMessage());
+					write(respResult.getSessionId(), respResult.getJobId(), true, millis, "do action failed. cause:"+t.getMessage());
 					return;
 				}
 			}
 			
 		});
-		
-		
-		
+		return respResult;
+	}
+
+	public long register() {
+		return registSession();
+	}
+
+	public RespResult getCmdExecuteResult(ReqGetResult req) {
+		RespResult respResult = new RespResult();
+		if(!heartBeatSession(req.getGaSessionId())){
+			respResult.setMessage("session Timeout.please reload!");
+			respResult.setFinish(true);
+			return respResult;
+		}
+		read(req.getJobId(), req.getPos(), req.getJobMillis(), respResult);
+		respResult.setFinish(isFinish(respResult.getMessage()));
+		return respResult;
+	}
+
+	public void killJob(ReqKillJob req) {
+		unRegistJob(req.getGaSessionId(), req.getJobId());
+	}
+
+	public boolean sessionHeartBeat(ReqHeart req) {
+		return heartBeatSession(req.getGaSessionId());
 	}
 	
 	/**
-	 * 写消息
-	 * @param channel
+	 * 执行结果输出文件路径
+	 */
+	private final String executeResultDir = "data/";
+	
+	private final String executeResultFileExtensions = ".ga";
+	
+	private final String endMark = ""+(char)29;
+	
+	/**
+	 * 写结果
+	 * @param gaSessionId
+	 * @param jobId
 	 * @param isF
-	 * @param req
 	 * @param message
 	 */
-	private void write(Channel channel, ReqCmd req, boolean isF, String message) {
-		channel.write(new RespCmd(req.getId(), isF, message));
+	private void write(long gaSessionId, long jobId, boolean isF, long millis, String message) {
+		if(isF){
+			message += endMark;
+		}
+		
+		if(StringUtils.isEmpty(message)){
+			return;
+		}
+		
+		RandomAccessFile rf;
+		
+		try {
+			new File(executeResultDir).mkdir();
+			rf = new RandomAccessFile(getExecuteFilePath(jobId, millis), "rw");
+			rf.seek(rf.length());
+			rf.write(message.getBytes());
+			rf.close();
+		} catch (IOException e) {
+			logger.warn("jobFile write error!",e);
+			return ;
+		}  
 	}
 	
+	/**
+	 * 读job的结果
+	 * @param gaSessionId
+	 * @param jobId
+	 * @param pos
+	 * @param message
+	 * @return
+	 */
+	private void read(long jobId, int pos, long millis, RespResult respResult) {
+		RandomAccessFile rf;
+		StringBuilder sb = new StringBuilder();
+		int newPos = pos;
+		try {
+			rf = new RandomAccessFile(getExecuteFilePath(jobId, millis), "r");
+			rf.seek(pos);
+			byte[] buffer = new byte[10000]; 
+	        int len=0; 
+			while ((len=rf.read(buffer))!=-1) { 
+				newPos += len;
+				sb.append(new String(buffer,0,len)); 
+	        } 
+			rf.close();
+		} catch (IOException e) {
+			logger.warn("jobFile read error!",e);
+			return ;
+		}  
+		respResult.setPos(newPos);
+		respResult.setMessage(sb.toString());
+	}
+	
+	private String getExecuteFilePath(long jobId, long millis){
+		return executeResultDir + jobId + executeResultFileExtensions + "." + millis;
+	}
+	
+	private boolean isFinish(String message){
+		return !StringUtils.isEmpty(message) ? message.endsWith(endMark) : false;
+	}
 }

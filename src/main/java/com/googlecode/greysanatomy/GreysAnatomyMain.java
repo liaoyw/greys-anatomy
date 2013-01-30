@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.console.network.ConsoleClient;
-import com.googlecode.greysanatomy.exception.ConsoleException;
 
 /**
  * Hello world!
@@ -22,7 +21,7 @@ public class GreysAnatomyMain {
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
 	public static final String JARFILE = GreysAnatomyMain.class.getProtectionDomain().getCodeSource().getLocation().getFile();
 	
-	public GreysAnatomyMain(String[] args) throws IOException, ConsoleException, IllegalArgumentException, SecurityException, ClassNotFoundException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	public GreysAnatomyMain(String[] args) throws Exception {
 		
 		// 解析配置文件
 		Configer configer = parsetConfiger(args);
@@ -102,10 +101,9 @@ public class GreysAnatomyMain {
 	/**
 	 * 激活控制台客户端
 	 * @param configer
-	 * @throws ConsoleException
-	 * @throws IOException
+	 * @throws Exception 
 	 */
-	private void activeConsoleClient(Configer configer) throws ConsoleException, IOException {
+	private void activeConsoleClient(Configer configer) throws Exception {
 		ConsoleClient.getInstance(configer);
 	}
 	

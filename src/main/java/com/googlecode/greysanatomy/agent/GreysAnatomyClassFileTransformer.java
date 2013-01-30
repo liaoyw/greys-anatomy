@@ -32,7 +32,7 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 
 	private final String perfClzRegex;
 	private final String perfMthRegex;
-	private final int id;
+	private final String id;
 	private final List<CtBehavior> modifiedBehaviors;
 
 	/*
@@ -112,11 +112,11 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 	 */
 	public static class TransformResult {
 		
-		private final int id;
+		private final String id;
 		private final List<Class<?>> modifiedClasses;
 		private final List<CtBehavior> modifiedBehaviors;
 		
-		private TransformResult(int id, final List<Class<?>> modifiedClasses, final List<CtBehavior> modifiedBehaviors) {
+		private TransformResult(String id, final List<Class<?>> modifiedClasses, final List<CtBehavior> modifiedBehaviors) {
 			this.id = id;
 			this.modifiedClasses = new ArrayList<Class<?>>(modifiedClasses);
 			this.modifiedBehaviors = new ArrayList<CtBehavior>(modifiedBehaviors);
@@ -130,7 +130,7 @@ public class GreysAnatomyClassFileTransformer implements ClassFileTransformer {
 			return modifiedBehaviors;
 		}
 
-		public int getId() {
+		public String getId() {
 			return id;
 		}
 		

@@ -17,11 +17,11 @@ import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.Configer;
 import com.googlecode.greysanatomy.console.command.Commands;
-import com.googlecode.greysanatomy.console.network.ConsoleServerService;
-import com.googlecode.greysanatomy.console.network.coder.RespResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqCmd;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqGetResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqKillJob;
+import com.googlecode.greysanatomy.console.rmi.RespResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqCmd;
+import com.googlecode.greysanatomy.console.rmi.req.ReqGetResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqKillJob;
+import com.googlecode.greysanatomy.console.server.ConsoleServerService;
 import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**
@@ -39,8 +39,7 @@ public class GreysAnatomyConsole {
 	private volatile boolean isF = true;
 	
 	private final long sessionId;
-	private int jobId;
-	private long jobMillis;
+	private String jobId;
 	
 	/**
 	 * 创建GA控制台
@@ -97,7 +96,6 @@ public class GreysAnatomyConsole {
 			// 发送命令请求
 			RespResult result =	consolServer.postCmd(reqCmd);
 			jobId = result.getJobId();
-			jobMillis = result.getJobMillis();
 		}
 		
 	}
@@ -110,8 +108,7 @@ public class GreysAnatomyConsole {
 	private class GaConsoleOutputer implements Runnable {
 
 		private final ConsoleServerService consolServer;
-		private int currentJob = 0;
-		private long currentJobMillis = 0;
+		private String currentJob;
 		private int pos = 0;
 		private GaConsoleOutputer(ConsoleServerService consolServer) {
 			this.consolServer = consolServer;
@@ -132,18 +129,17 @@ public class GreysAnatomyConsole {
 		
 		private void doWrite() throws Exception {
 			//如果任务结束，或还没有注册好job  则不读
-			if(isF || sessionId == 0 || jobId ==0){
+			if(isF || sessionId == 0 || StringUtils.isEmpty(jobId)){
 				return;
 			}
 			
 			//如果当前获取结果的job不是正在执行的job，则从0开始读
-			if((currentJob != jobId) || (currentJobMillis != jobMillis)){
+			if(!StringUtils.equals(currentJob, jobId)){
 				pos = 0;
 				currentJob = jobId;
-				currentJobMillis = jobMillis;
 			}
 			
-			RespResult resp = consolServer.getCmdExecuteResult(new ReqGetResult(jobId, sessionId, jobMillis, pos));
+			RespResult resp = consolServer.getCmdExecuteResult(new ReqGetResult(jobId, sessionId, pos));
 			pos = resp.getPos();
 			write(resp);
 		}
@@ -185,6 +181,8 @@ public class GreysAnatomyConsole {
 		if( !isF) {
 			if( resp.isFinish() ) {
 				isF = true;
+				resp.setMessage(resp.getMessage()
+						+ "------------------------------end------------------------------\n");
 			}
 			if(!StringUtils.isEmpty(resp.getMessage())){
 				write(resp.getMessage());

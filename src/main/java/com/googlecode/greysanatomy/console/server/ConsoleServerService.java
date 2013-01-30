@@ -1,12 +1,12 @@
-package com.googlecode.greysanatomy.console.network;
+package com.googlecode.greysanatomy.console.server;
 
 import java.rmi.Remote;
 
-import com.googlecode.greysanatomy.console.network.coder.RespResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqCmd;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqGetResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqHeart;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqKillJob;
+import com.googlecode.greysanatomy.console.rmi.RespResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqCmd;
+import com.googlecode.greysanatomy.console.rmi.req.ReqGetResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqHeart;
+import com.googlecode.greysanatomy.console.rmi.req.ReqKillJob;
 
 /**
  * 控制台服务端interface

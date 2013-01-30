@@ -93,7 +93,7 @@ public class Probes {
 	 * @param targetThis
 	 * @param args
 	 */
-	public static void doBefore(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args) {
+	public static void doBefore(String id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args) {
 		if( isListener(id, AdviceListener.class) ) {
 			try {
 				Advice p = new Advice(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, false);
@@ -114,7 +114,7 @@ public class Probes {
 	 * @param args
 	 * @param returnObj
 	 */
-	public static void doSuccess(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Object returnObj) {
+	public static void doSuccess(String id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Object returnObj) {
 		if( isListener(id, AdviceListener.class) ) {
 			try {
 				Advice p = new Advice(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, false);
@@ -138,7 +138,7 @@ public class Probes {
 	 * @param args
 	 * @param throwException
 	 */
-	public static void doException(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Throwable throwException) {
+	public static void doException(String id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Throwable throwException) {
 		if( isListener(id, AdviceListener.class) ) {
 			try {
 				Advice p = new Advice(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, false);
@@ -163,7 +163,7 @@ public class Probes {
 	 * @param returnObj
 	 * @param throwException
 	 */
-	public static void doFinish(int id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Object returnObj, Throwable throwException) {
+	public static void doFinish(String id, Class<?> targetClass, Constructor<?> targetConstructor, Method targetMethod, Object targetThis, Object[] args, Object returnObj, Throwable throwException) {
 		if( isListener(id, AdviceListener.class) ) {
 			try {
 				Advice p = new Advice(newTarget(targetClass, targetConstructor, targetMethod, targetThis), args, true);
@@ -368,7 +368,7 @@ public class Probes {
 	 * @throws NotFoundException
 	 * @throws ClassNotFoundException 
 	 */
-	public static void mine(int id, ClassLoader loader, CtClass cc, CtBehavior cb) throws CannotCompileException, NotFoundException, ClassNotFoundException {
+	public static void mine(String id, ClassLoader loader, CtClass cc, CtBehavior cb) throws CannotCompileException, NotFoundException, ClassNotFoundException {
 		
 		if( isIngore(cc, cb) ) {
 			return;
@@ -422,7 +422,7 @@ public class Probes {
 	 * @throws CannotCompileException
 	 * @throws NotFoundException
 	 */
-	private static void mineProbeForConstructor(CtBehavior cb, int id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
+	private static void mineProbeForConstructor(CtBehavior cb, String id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
 		cb.addCatch(format("{if(%s.isJobAlive(%s)){%s.doBefore(%s,%s,%s,%s,%s,$args);%s.doException(%s,%s,%s,%s,%s,$args,$e);}throw $e;}", 
 				jobsClass, id, 
 				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis, 
@@ -445,7 +445,7 @@ public class Probes {
 	 * @throws CannotCompileException
 	 * @throws NotFoundException
 	 */
-	private static void mineProbeForMethod(CtBehavior cb, int id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
+	private static void mineProbeForMethod(CtBehavior cb, String id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
 		cb.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,%s,%s,$args);}", 
 				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
 		cb.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,%s,%s,$args,$e);throw $e;}", 

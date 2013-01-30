@@ -1,7 +1,7 @@
 package com.googlecode.greysanatomy.console.command;
 
 import static com.googlecode.greysanatomy.agent.GreysAnatomyClassFileTransformer.transform;
-import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.registJob;
+import static com.googlecode.greysanatomy.console.server.SessionJobsHolder.registJob;
 import static com.googlecode.greysanatomy.probe.ProbeJobs.activeJob;
 
 import java.lang.instrument.Instrumentation;

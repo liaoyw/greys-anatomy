@@ -36,9 +36,9 @@ public abstract class Command {
 		
 		private final Instrumentation inst;
 		private final long sessionId;
-		private final int jobId;
+		private final String jobId;
 		
-		public Info(Instrumentation inst, long sessionId, int jobId) {
+		public Info(Instrumentation inst, long sessionId, String jobId) {
 			this.inst = inst;
 			this.sessionId = sessionId;
 			this.jobId = jobId;
@@ -52,7 +52,7 @@ public abstract class Command {
 			return sessionId;
 		}
 
-		public int getJobId() {
+		public String getJobId() {
 			return jobId;
 		}
 		

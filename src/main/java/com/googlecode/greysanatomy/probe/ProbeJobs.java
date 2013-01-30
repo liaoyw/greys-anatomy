@@ -3,8 +3,8 @@ package com.googlecode.greysanatomy.probe;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,29 +14,24 @@ public class ProbeJobs {
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
 	
 	/**
-	 * 序列
-	 */
-	private static final AtomicInteger idseq = new AtomicInteger();
-
-	/**
 	 * 任务
 	 * @author vlinux
 	 *
 	 */
 	private static class Job {
-		private int id;
+		private String id;
 		private boolean isAlive;
 		private JobListener listener;
 	}
 	
-	private static final Map<Integer,Job> jobs = new ConcurrentHashMap<Integer, Job>();
+	private static final Map<String,Job> jobs = new ConcurrentHashMap<String, Job>();
 	
 	
 	/**
 	 * 注册侦听器
 	 * @param listener
 	 */
-	public static void register(int id, JobListener listener) {
+	public static void register(String id, JobListener listener) {
 		Job job = jobs.get(id);
 		if( null != job ) {
 			job.listener = listener;
@@ -48,8 +43,8 @@ public class ProbeJobs {
 	 * 创建一个job
 	 * @return
 	 */
-	public static int createJob() {
-		final int id = idseq.incrementAndGet();
+	public static String createJob() {
+		final String id = UUID.randomUUID().toString();
 		Job job = new Job();
 		job.id = id;
 		job.isAlive = false;
@@ -61,7 +56,7 @@ public class ProbeJobs {
 	 * 激活一个job
 	 * @param id
 	 */
-	public static void activeJob(int id) {
+	public static void activeJob(String id) {
 		Job job = jobs.get(id);
 		if( null != job ) {
 			job.isAlive = true;
@@ -73,7 +68,7 @@ public class ProbeJobs {
 	 * @param id
 	 * @return
 	 */
-	public static boolean isJobAlive(int id) {
+	public static boolean isJobAlive(String id) {
 		Job job = jobs.get(id);
 		return null != job && job.isAlive;
 	}
@@ -82,7 +77,7 @@ public class ProbeJobs {
 	 * 杀死一个job
 	 * @param id
 	 */
-	public static void killJob(int id) {
+	public static void killJob(String id) {
 		Job job = jobs.get(id);
 		if( null != job ) {
 			job.isAlive = false;
@@ -98,8 +93,8 @@ public class ProbeJobs {
 	 * 返回存活的jobId
 	 * @return
 	 */
-	public static List<Integer> listAliveJobIds() {
-		final List<Integer> jobIds = new ArrayList<Integer>();
+	public static List<String> listAliveJobIds() {
+		final List<String> jobIds = new ArrayList<String>();
 		for(Job job : jobs.values()) {
 			if( job.isAlive ) {
 				jobIds.add(job.id);
@@ -113,7 +108,7 @@ public class ProbeJobs {
 	 * @param id
 	 * @return
 	 */
-	public static JobListener getJobListeners(int id) {
+	public static JobListener getJobListeners(String id) {
 		if( jobs.containsKey(id) ) {
 			return jobs.get(id).listener;
 		} else {
@@ -127,7 +122,7 @@ public class ProbeJobs {
 	 * @param classListener
 	 * @return
 	 */
-	public static boolean isListener(int id, Class<? extends JobListener> classListener) {
+	public static boolean isListener(String id, Class<? extends JobListener> classListener) {
 		
 		final JobListener jobListener = getJobListeners(id);
 		return null != jobListener 

@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network.coder;
+package com.googlecode.greysanatomy.console.rmi;
 
 import java.io.Serializable;
 
@@ -10,7 +10,7 @@ import java.io.Serializable;
 public class RespResult implements Serializable{
 	private static final long serialVersionUID = 661800158888334705L;
 
-	private int jobId;
+	private String jobId;
 	
 	private long sessionId;
 	
@@ -18,15 +18,13 @@ public class RespResult implements Serializable{
 	
 	private String message;
 	
-	private long jobMillis;
-	
 	private boolean isFinish;
 
-	public int getJobId() {
+	public String getJobId() {
 		return jobId;
 	}
 
-	public void setJobId(int jobId) {
+	public void setJobId(String jobId) {
 		this.jobId = jobId;
 	}
 
@@ -60,14 +58,6 @@ public class RespResult implements Serializable{
 
 	public void setPos(int pos) {
 		this.pos = pos;
-	}
-
-	public long getJobMillis() {
-		return jobMillis;
-	}
-
-	public void setJobMillis(long createMillis) {
-		this.jobMillis = createMillis;
 	}
 	
 }

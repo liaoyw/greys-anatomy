@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network.coder.req;
+package com.googlecode.greysanatomy.console.rmi.req;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -17,7 +17,7 @@ public class GaSession implements Serializable {
 	
 	private final long sessionId;
 	
-	private Set<Integer> jobIds = new HashSet<Integer>();
+	private Set<String> jobIds = new HashSet<String>();
 	
 	private boolean isAlive = true;
 	
@@ -43,11 +43,11 @@ public class GaSession implements Serializable {
 		this.lastModified = lastModified;
 	}
 
-	public Set<Integer> getJobIds() {
+	public Set<String> getJobIds() {
 		return jobIds;
 	}
 
-	public void setJobIds(Set<Integer> jobIds) {
+	public void setJobIds(Set<String> jobIds) {
 		this.jobIds = jobIds;
 	}
 

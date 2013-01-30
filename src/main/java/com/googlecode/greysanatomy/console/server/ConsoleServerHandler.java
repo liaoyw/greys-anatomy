@@ -1,8 +1,8 @@
-package com.googlecode.greysanatomy.console.network;
+package com.googlecode.greysanatomy.console.server;
 
-import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.unRegistJob;
-import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.heartBeatSession;
-import static com.googlecode.greysanatomy.console.network.SessionJobsHolder.registSession;
+import static com.googlecode.greysanatomy.console.server.SessionJobsHolder.heartBeatSession;
+import static com.googlecode.greysanatomy.console.server.SessionJobsHolder.registSession;
+import static com.googlecode.greysanatomy.console.server.SessionJobsHolder.unRegistJob;
 import static com.googlecode.greysanatomy.probe.ProbeJobs.createJob;
 
 import java.io.File;
@@ -22,11 +22,11 @@ import com.googlecode.greysanatomy.console.command.Command.Action;
 import com.googlecode.greysanatomy.console.command.Command.Info;
 import com.googlecode.greysanatomy.console.command.Command.Sender;
 import com.googlecode.greysanatomy.console.command.Commands;
-import com.googlecode.greysanatomy.console.network.coder.RespResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqCmd;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqGetResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqHeart;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqKillJob;
+import com.googlecode.greysanatomy.console.rmi.RespResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqCmd;
+import com.googlecode.greysanatomy.console.rmi.req.ReqGetResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqHeart;
+import com.googlecode.greysanatomy.console.rmi.req.ReqKillJob;
 import com.googlecode.greysanatomy.util.JvmUtils;
 import com.googlecode.greysanatomy.util.JvmUtils.ShutdownHook;
 
@@ -71,9 +71,7 @@ public class ConsoleServerHandler {
 	public RespResult postCmd(final ReqCmd cmd) {
 		final RespResult respResult = new RespResult();
 		respResult.setSessionId(cmd.getGaSessionId());
-		final long millis = System.currentTimeMillis();
 		respResult.setJobId(createJob());
-		respResult.setJobMillis(millis);
 		workers.execute(new Runnable(){
 
 			@Override
@@ -84,7 +82,7 @@ public class ConsoleServerHandler {
 
 					@Override
 					public void send(boolean isF, String message) {
-						write(respResult.getSessionId(), respResult.getJobId(), isF, millis, message);
+						write(respResult.getSessionId(), respResult.getJobId(), isF, message);
 					}
 				};
 				
@@ -92,7 +90,7 @@ public class ConsoleServerHandler {
 					final Command command = Commands.getInstance().newCommand(cmd.getCommand());
 					// √¸¡Ó≤ª¥Ê‘⁄
 					if( null == command ) {
-						write(respResult.getSessionId(), respResult.getJobId(), true, millis, "command not found!");
+						write(respResult.getSessionId(), respResult.getJobId(), true, "command not found!");
 						return;
 					}
 					final Action action = command.getAction();
@@ -100,7 +98,7 @@ public class ConsoleServerHandler {
 				}catch(Throwable t) {
 					// ÷¥––√¸¡Ó ß∞‹
 					logger.warn("do action failed.", t);
-					write(respResult.getSessionId(), respResult.getJobId(), true, millis, "do action failed. cause:"+t.getMessage());
+					write(respResult.getSessionId(), respResult.getJobId(), true, "do action failed. cause:"+t.getMessage());
 					return;
 				}
 			}
@@ -120,7 +118,7 @@ public class ConsoleServerHandler {
 			respResult.setFinish(true);
 			return respResult;
 		}
-		read(req.getJobId(), req.getPos(), req.getJobMillis(), respResult);
+		read(req.getJobId(), req.getPos(), respResult);
 		respResult.setFinish(isFinish(respResult.getMessage()));
 		return respResult;
 	}
@@ -149,7 +147,7 @@ public class ConsoleServerHandler {
 	 * @param isF
 	 * @param message
 	 */
-	private void write(long gaSessionId, long jobId, boolean isF, long millis, String message) {
+	private void write(long gaSessionId, String jobId, boolean isF, String message) {
 		if(isF){
 			message += endMark;
 		}
@@ -162,7 +160,7 @@ public class ConsoleServerHandler {
 		
 		try {
 			new File(executeResultDir).mkdir();
-			rf = new RandomAccessFile(getExecuteFilePath(jobId, millis), "rw");
+			rf = new RandomAccessFile(getExecuteFilePath(jobId), "rw");
 			rf.seek(rf.length());
 			rf.write(message.getBytes());
 			rf.close();
@@ -180,12 +178,12 @@ public class ConsoleServerHandler {
 	 * @param message
 	 * @return
 	 */
-	private void read(long jobId, int pos, long millis, RespResult respResult) {
+	private void read(String jobId, int pos, RespResult respResult) {
 		RandomAccessFile rf;
 		StringBuilder sb = new StringBuilder();
 		int newPos = pos;
 		try {
-			rf = new RandomAccessFile(getExecuteFilePath(jobId, millis), "r");
+			rf = new RandomAccessFile(getExecuteFilePath(jobId), "r");
 			rf.seek(pos);
 			byte[] buffer = new byte[10000]; 
 	        int len=0; 
@@ -195,15 +193,15 @@ public class ConsoleServerHandler {
 	        } 
 			rf.close();
 		} catch (IOException e) {
-			logger.warn("jobFile read error!",e);
+			logger.warn("jobFile read error!");
 			return ;
 		}  
 		respResult.setPos(newPos);
 		respResult.setMessage(sb.toString());
 	}
 	
-	private String getExecuteFilePath(long jobId, long millis){
-		return executeResultDir + jobId + executeResultFileExtensions + "." + millis;
+	private String getExecuteFilePath(String jobId){
+		return executeResultDir + jobId + executeResultFileExtensions;
 	}
 	
 	private boolean isFinish(String message){

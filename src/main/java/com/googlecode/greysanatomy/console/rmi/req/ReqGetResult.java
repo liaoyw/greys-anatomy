@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network.coder.req;
+package com.googlecode.greysanatomy.console.rmi.req;
 
 
 /**
@@ -9,20 +9,17 @@ package com.googlecode.greysanatomy.console.network.coder.req;
 public class ReqGetResult extends GaRequest {
 	private static final long serialVersionUID = 7156731632312708537L;
 
-	private final long jobId;
-	
-	private final long jobMillis;
+	private final String jobId;
 	
 	private final int pos;
 	
-	public ReqGetResult(long jobId, long sessionId, long jobMillis, int pos) {
+	public ReqGetResult(String jobId, long sessionId, int pos) {
 		this.jobId = jobId;
 		this.pos = pos;
-		this.jobMillis = jobMillis;
 		setGaSessionId(sessionId);
 	}
 	
-	public long getJobId() {
+	public String getJobId() {
 		return jobId;
 	}
 
@@ -30,8 +27,4 @@ public class ReqGetResult extends GaRequest {
 		return pos;
 	}
 
-	public long getJobMillis() {
-		return jobMillis;
-	}
-	
 }

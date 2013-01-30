@@ -10,7 +10,7 @@ import joptsimple.OptionSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.googlecode.greysanatomy.console.network.ConsoleClient;
+import com.googlecode.greysanatomy.console.client.ConsoleClient;
 
 /**
  * Hello world!

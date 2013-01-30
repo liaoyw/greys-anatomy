@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network;
+package com.googlecode.greysanatomy.console.server;
 
 import java.lang.instrument.Instrumentation;
 import java.net.MalformedURLException;
@@ -11,11 +11,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.Configer;
-import com.googlecode.greysanatomy.console.network.coder.RespResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqCmd;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqGetResult;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqHeart;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqKillJob;
+import com.googlecode.greysanatomy.console.rmi.RespResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqCmd;
+import com.googlecode.greysanatomy.console.rmi.req.ReqGetResult;
+import com.googlecode.greysanatomy.console.rmi.req.ReqHeart;
+import com.googlecode.greysanatomy.console.rmi.req.ReqKillJob;
 import com.googlecode.greysanatomy.util.GaStringUtils;
 
 /**

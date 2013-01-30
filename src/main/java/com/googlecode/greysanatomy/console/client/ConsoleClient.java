@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network;
+package com.googlecode.greysanatomy.console.client;
 
 import java.io.IOException;
 import java.rmi.Naming;
@@ -8,7 +8,8 @@ import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.Configer;
 import com.googlecode.greysanatomy.console.GreysAnatomyConsole;
-import com.googlecode.greysanatomy.console.network.coder.req.ReqHeart;
+import com.googlecode.greysanatomy.console.rmi.req.ReqHeart;
+import com.googlecode.greysanatomy.console.server.ConsoleServerService;
 import com.googlecode.greysanatomy.exception.ConsoleException;
 
 public class ConsoleClient {
@@ -20,7 +21,7 @@ public class ConsoleClient {
 	
 	private ConsoleClient(Configer configer) throws Exception {
 		this.consoleServer = (ConsoleServerService)Naming.lookup("rmi://127.0.0.1:"+configer.getConsolePort()+"/RMI_GREYS_ANATOMY");
-		sessionId = this.consoleServer.register();
+		this.sessionId = this.consoleServer.register();
 		final GreysAnatomyConsole console = new GreysAnatomyConsole(configer, sessionId);
 		console.start(consoleServer);
 		heartBeat();

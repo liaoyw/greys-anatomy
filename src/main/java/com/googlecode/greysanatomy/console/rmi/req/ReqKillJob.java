@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network.coder.req;
+package com.googlecode.greysanatomy.console.rmi.req;
 
 
 /**
@@ -9,14 +9,14 @@ package com.googlecode.greysanatomy.console.network.coder.req;
 public class ReqKillJob extends GaRequest {
 	private static final long serialVersionUID = 7156731632312708537L;
 	
-	private final int jobId;
+	private final String jobId;
 	
-	public ReqKillJob(long sessionId, int jobId){
+	public ReqKillJob(long sessionId, String jobId){
 		setGaSessionId(sessionId);
 		this.jobId = jobId;
 	}
 
-	public int getJobId() {
+	public String getJobId() {
 		return jobId;
 	}
 	

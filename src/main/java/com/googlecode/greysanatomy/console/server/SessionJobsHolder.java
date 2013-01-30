@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network;
+package com.googlecode.greysanatomy.console.server;
 
 import static com.googlecode.greysanatomy.probe.ProbeJobs.killJob;
 
@@ -8,10 +8,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.googlecode.greysanatomy.console.network.coder.req.GaSession;
+import com.googlecode.greysanatomy.console.rmi.req.GaSession;
 import com.googlecode.greysanatomy.exception.SessionTimeOutException;
 
 /**
@@ -93,14 +94,14 @@ public class SessionJobsHolder {
 	 * @param channel
 	 * @param jobids
 	 */
-	public static synchronized void unRegistJob(long gaSessionId, int jobId) {
+	public static synchronized void unRegistJob(long gaSessionId, String jobId) {
 		GaSession holderSession = sessionHolder.get(gaSessionId);
 		//注销任务则不需要判断会话是否还在，即使不在也可以注销
 		if( holderSession != null){
-			final Iterator<Integer> it = holderSession.getJobIds().iterator();
+			final Iterator<String> it = holderSession.getJobIds().iterator();
 			while( it.hasNext() ) {
-				Integer id = it.next();
-				if( id.equals(jobId) ) {
+				String id = it.next();
+				if( StringUtils.equals(id, jobId) ) {
 					killJob(id);
 					it.remove();
 					logger.info("unRegist job={} for session={}", id, gaSessionId);
@@ -115,7 +116,7 @@ public class SessionJobsHolder {
 	 * @param jobId
 	 * @throws SessionTimeOutException
 	 */
-	public static synchronized void registJob(long sessionId, int jobId) throws SessionTimeOutException {
+	public static synchronized void registJob(long sessionId, String jobId) throws SessionTimeOutException {
 		GaSession holderSession = sessionHolder.get(sessionId);
 		if( holderSession == null || !holderSession.isAlive()){
 			throw new SessionTimeOutException("session is not exsit!");
@@ -134,7 +135,7 @@ public class SessionJobsHolder {
 			return;
 		}
 		holderSession.setAlive(false);
-		final Iterator<Integer> it = holderSession.getJobIds().iterator();
+		final Iterator<String> it = holderSession.getJobIds().iterator();
 		while( it.hasNext() ) {
 			killJob(it.next());
 		}

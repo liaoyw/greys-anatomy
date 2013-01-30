@@ -1,4 +1,4 @@
-package com.googlecode.greysanatomy.console.network.coder.req;
+package com.googlecode.greysanatomy.console.rmi.req;
 
 import java.io.Serializable;
 

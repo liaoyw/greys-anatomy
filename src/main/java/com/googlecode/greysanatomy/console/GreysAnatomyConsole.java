@@ -11,6 +11,7 @@ import java.io.Writer;
 import jline.console.ConsoleReader;
 import jline.console.KeyMap;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -185,7 +186,9 @@ public class GreysAnatomyConsole {
 			if( resp.isFinish() ) {
 				isF = true;
 			}
-			write(resp.getMessage());
+			if(!StringUtils.isEmpty(resp.getMessage())){
+				write(resp.getMessage());
+			}
 		}
 	}
 	

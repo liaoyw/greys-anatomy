@@ -240,8 +240,9 @@ public class GaReflectUtils {
 	 * @throws IllegalArgumentException
 	 * @throws IllegalAccessException
 	 */
+	@SuppressWarnings("unchecked")
 	public static <T> T getFieldValueByFieldName(Object target, String fieldName) throws IllegalArgumentException, IllegalAccessException {
-		return getFieldValueByField(target, getField(target.getClass(), fieldName));
+		return (T)getFieldValueByField(target, getField(target.getClass(), fieldName));
 	}
 	
 	/**

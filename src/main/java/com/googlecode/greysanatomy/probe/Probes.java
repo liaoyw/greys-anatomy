@@ -423,12 +423,12 @@ public class Probes {
 	 * @throws NotFoundException
 	 */
 	private static void mineProbeForConstructor(CtBehavior cb, String id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
-		cb.addCatch(format("{if(%s.isJobAlive(%s)){%s.doBefore(%s,%s,%s,%s,%s,$args);%s.doException(%s,%s,%s,%s,%s,$args,$e);}throw $e;}", 
+		cb.addCatch(format("{if(%s.isJobAlive(\"%s\")){%s.doBefore(\"%s\",%s,%s,%s,%s,$args);%s.doException(\"%s\",%s,%s,%s,%s,$args,$e);}throw $e;}", 
 				jobsClass, id, 
 				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis, 
 				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis), 
 			ClassPool.getDefault().get("java.lang.Throwable"));
-		cb.insertAfter(format("{if(%s.isJobAlive(%s)){%s.doBefore(%s,%s,%s,%s,%s,$args);%s.doSuccess(%s,%s,%s,%s,%s,$args,($w)$_);}}", 
+		cb.insertAfter(format("{if(%s.isJobAlive(\"%s\")){%s.doBefore(\"%s\",%s,%s,%s,%s,$args);%s.doSuccess(\"%s\",%s,%s,%s,%s,$args,($w)$_);}}", 
 				jobsClass, id, 
 				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis,
 				probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
@@ -446,12 +446,12 @@ public class Probes {
 	 * @throws NotFoundException
 	 */
 	private static void mineProbeForMethod(CtBehavior cb, String id, String javassistClass, String javassistConstructor, String javassistMethod, String javassistThis) throws CannotCompileException, NotFoundException {
-		cb.insertBefore(format("{if(%s.isJobAlive(%s))%s.doBefore(%s,%s,%s,%s,%s,$args);}", 
+		cb.insertBefore(format("{if(%s.isJobAlive(\"%s\"))%s.doBefore(\"%s\",%s,%s,%s,%s,$args);}", 
 				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
-		cb.addCatch(format("{if(%s.isJobAlive(%s))%s.doException(%s,%s,%s,%s,%s,$args,$e);throw $e;}", 
+		cb.addCatch(format("{if(%s.isJobAlive(\"%s\"))%s.doException(\"%s\",%s,%s,%s,%s,$args,$e);throw $e;}", 
 				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis), 
 			ClassPool.getDefault().get("java.lang.Throwable"));
-		cb.insertAfter(format("{if(%s.isJobAlive(%s))%s.doSuccess(%s,%s,%s,%s,%s,$args,($w)$_);}", 
+		cb.insertAfter(format("{if(%s.isJobAlive(\"%s\"))%s.doSuccess(\"%s\",%s,%s,%s,%s,$args,($w)$_);}", 
 				jobsClass, id, probesClass, id, javassistClass, javassistConstructor, javassistMethod, javassistThis));
 	}
 	

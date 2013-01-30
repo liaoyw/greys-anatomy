@@ -23,7 +23,7 @@ public class AgentMain {
 			URLClassLoader agentLoader = new URLClassLoader(new URL[]{new URL("file:"+GreysAnatomyMain.JARFILE)});
 			
 			final Configer configer = Configer.toConfiger(args);
-			agentLoader.loadClass("com.googlecode.greysanatomy.console.network.ConsoleServer").getMethod("getInstance",Configer.class, Instrumentation.class).invoke(null, configer, inst);
+			agentLoader.loadClass("com.googlecode.greysanatomy.console.server.ConsoleServer").getMethod("getInstance",Configer.class, Instrumentation.class).invoke(null, configer, inst);
 			
 		}catch(Throwable t) {
 			t.printStackTrace();

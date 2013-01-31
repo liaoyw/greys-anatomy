@@ -134,7 +134,7 @@ public class ConsoleServerHandler {
 	/**
 	 * 执行结果输出文件路径
 	 */
-	private final String executeResultDir = "data/";
+	private final String executeResultDir = System.getProperty("java.io.tmpdir") + "/greysdata/";
 	
 	private final String executeResultFileExtensions = ".ga";
 	

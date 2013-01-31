@@ -179,7 +179,6 @@ public class Commands {
 					} else {
 						argCompleter.getCompleters().add(new InputCompleter());
 					}
-					
 				}
 			}//for
 			argCompleter.getCompleters().add(new NullCompleter());

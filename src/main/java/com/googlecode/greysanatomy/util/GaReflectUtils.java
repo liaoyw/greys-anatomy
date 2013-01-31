@@ -188,11 +188,11 @@ public class GaReflectUtils {
 	public static Set<Field> getFileds(Class<?> clazz) {
 		final Set<Field> fields = new LinkedHashSet<Field>();
 		final Class<?> parentClazz = clazz.getSuperclass();
-		if( null != parentClazz ) {
-			fields.addAll(getFileds(parentClazz));
-		}
 		for( Field field : clazz.getDeclaredFields() ) {
 			fields.add(field);
+		}
+		if( null != parentClazz ) {
+			fields.addAll(getFileds(parentClazz));
 		}
 		return fields;
 	}

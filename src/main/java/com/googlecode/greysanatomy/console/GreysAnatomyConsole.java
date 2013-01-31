@@ -6,6 +6,7 @@ import static org.apache.commons.lang.StringUtils.isBlank;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.io.Writer;
 
 import jline.console.ConsoleReader;
@@ -16,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.googlecode.greysanatomy.Configer;
+import com.googlecode.greysanatomy.console.command.Command;
 import com.googlecode.greysanatomy.console.command.Commands;
 import com.googlecode.greysanatomy.console.rmi.RespResult;
 import com.googlecode.greysanatomy.console.rmi.req.ReqCmd;
@@ -40,6 +42,7 @@ public class GreysAnatomyConsole {
 	
 	private final long sessionId;
 	private String jobId;
+	private String path;
 	
 	/**
 	 * 创建GA控制台
@@ -88,6 +91,24 @@ public class GreysAnatomyConsole {
 			 */
 			if( isBlank(reqCmd.getCommand()) || !isF ) {
 				return;
+			}
+			
+			final Command command = Commands.getInstance().newCommand(reqCmd.getCommand());
+			
+			if( command != null ) {
+				path = command.getRedirectPath();
+				if(!StringUtils.isEmpty(path)){
+					//发命令之前先把重定向文件创建好，如果没有权限或其他问题，就不发起任务
+					try{
+						new RandomAccessFile(path, "rw").setLength(0);
+					}catch(Exception e){
+						write(path + ":" + e.getMessage());
+						return;
+					}
+				}
+			}else{
+				//如果命令不存在，客户端不抛异常，交给服务端处理。但是需要把path清空
+				path = EMPTY;
 			}
 			
 			// 将命令状态标记为未完成
@@ -141,6 +162,18 @@ public class GreysAnatomyConsole {
 			
 			RespResult resp = consolServer.getCmdExecuteResult(new ReqGetResult(jobId, sessionId, pos));
 			pos = resp.getPos();
+			
+			//先写重定向
+			try{
+				writeToFile(resp.getMessage(), path);
+			}catch(IOException e){
+				//重定向写文件出现异常时，需要kill掉job 不执行了
+				consolServer.killJob(new ReqKillJob(sessionId, jobId));
+				isF = true;
+				write(path + ":" + e.getMessage());
+				return;
+			}
+			
 			write(resp);
 		}
 		
@@ -206,4 +239,20 @@ public class GreysAnatomyConsole {
 		
 	}
 	
+	/**
+	 * 输出信息到文件
+	 * @param message
+	 * @param path
+	 * @throws IOException 
+	 */
+	private void writeToFile(String message, String path) throws IOException{
+		if(StringUtils.isEmpty(message) || StringUtils.isEmpty(path)){
+			return ;
+		}
+		
+		RandomAccessFile rf = new RandomAccessFile(path, "rw");
+		rf.seek(rf.length());
+		rf.write(message.getBytes());
+		rf.close();
+	}
 }

@@ -2,6 +2,8 @@ package com.googlecode.greysanatomy.console.command;
 
 import java.lang.instrument.Instrumentation;
 
+import com.googlecode.greysanatomy.console.command.annotation.Arg;
+
 /**
  * 抽象命令类
  * @author vlinux
@@ -9,6 +11,12 @@ import java.lang.instrument.Instrumentation;
  */
 public abstract class Command {
 
+	/**
+	 * 重定向路径
+	 */
+	@Arg(name="o", isRequired=false)
+	String redirectPath;
+	
 	/**
 	 * 信息发送者
 	 * @author vlinux
@@ -80,6 +88,13 @@ public abstract class Command {
 	 * @return
 	 */
 	abstract public Action getAction() ;
-	
+
+	public String getRedirectPath() {
+		return redirectPath;
+	}
+
+	public void setRedirectPath(String redirectPath) {
+		this.redirectPath = redirectPath;
+	}
 	
 }

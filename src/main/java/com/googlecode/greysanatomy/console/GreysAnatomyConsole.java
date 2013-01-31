@@ -73,6 +73,7 @@ public class GreysAnatomyConsole {
 		public void run() {
 			while(true) {
 				try {
+					//控制台读命令
 					doRead();
 				}catch(Exception e) {
 					// 这里是控制台，可能么？
@@ -139,6 +140,7 @@ public class GreysAnatomyConsole {
 		public void run() {
 			while(true) {
 				try {
+					//控制台写数据
 					doWrite();
 					//每500ms读一次结果
 					Thread.sleep(500);

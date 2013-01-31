@@ -16,8 +16,8 @@ import com.googlecode.greysanatomy.console.rmi.req.GaSession;
 import com.googlecode.greysanatomy.exception.SessionTimeOutException;
 
 /**
- * 服务端当前连接上job持有信息 
- * @author vlinux
+ * 服务端当前连接上session的job持有信息 
+ * @author chengtongda
  *
  */
 public class SessionJobsHolder {

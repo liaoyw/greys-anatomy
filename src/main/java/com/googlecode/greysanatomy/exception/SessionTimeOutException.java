@@ -1,5 +1,10 @@
 package com.googlecode.greysanatomy.exception;
 
+/**
+ * session³¬Ê±
+ * @author chengtongda
+ *
+ */
 public class SessionTimeOutException extends Exception {
 	
 	private static final long serialVersionUID = 3533150161706718201L;

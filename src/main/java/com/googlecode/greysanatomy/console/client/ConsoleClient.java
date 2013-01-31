@@ -12,6 +12,11 @@ import com.googlecode.greysanatomy.console.rmi.req.ReqHeart;
 import com.googlecode.greysanatomy.console.server.ConsoleServerService;
 import com.googlecode.greysanatomy.exception.ConsoleException;
 
+/**
+ * 控制台客户端
+ * @author chengtongda
+ *
+ */
 public class ConsoleClient {
 
 	private static final Logger logger = LoggerFactory.getLogger("greysanatomy");
